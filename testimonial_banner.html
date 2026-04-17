@@ -3,101 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lewis Anderson Enterprises – Testimonials</title>
+  <title>Testimonial Banner – Lewis Anderson Enterprises</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
   <style>
-    /* ── Brand tokens ── */
     :root {
       --brand-dark:   #1a2e4a;
       --brand-mid:    #2c5282;
       --brand-accent: #d4a017;
       --text-light:   #f0f4f8;
-      --text-muted:   #cbd5e0;
-      --banner-h:     96px;
+      --text-muted:   #a0aec0;
+      --banner-h:     120px;
     }
 
-    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* Minimal body — remove when embedding into your site */
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--brand-dark);
-      color: var(--text-light);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      background: #f5f5f5;
+      font-family: 'Lato', 'Segoe UI', Tahoma, sans-serif;
     }
 
-    /* ── Header (placeholder for page context) ── */
-    header {
-      width: 100%;
-      padding: 2.5rem 2rem 1.5rem;
-      text-align: center;
-    }
-
-    header h1 {
-      font-size: clamp(1.6rem, 4vw, 2.6rem);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: var(--brand-accent);
-    }
-
-    header p {
-      margin-top: 0.4rem;
-      font-size: 1rem;
-      color: var(--text-muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    /* ── Testimonial banner ── */
+    /* ── Banner ── */
     .testimonial-banner {
       width: 100%;
-      background: linear-gradient(135deg, var(--brand-mid) 0%, #1e3a5f 100%);
+      height: var(--banner-h);
+      background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-mid) 100%);
       border-top: 3px solid var(--brand-accent);
       border-bottom: 3px solid var(--brand-accent);
-      height: var(--banner-h);
       overflow: hidden;
       position: relative;
-      /* Fade edges */
       -webkit-mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        black 8%,
-        black 92%,
-        transparent 100%
+        to right, transparent 0%, black 6%, black 94%, transparent 100%
       );
       mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        black 8%,
-        black 92%,
-        transparent 100%
+        to right, transparent 0%, black 6%, black 94%, transparent 100%
       );
-    }
-
-    .banner-label {
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 8%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--brand-dark);
-      border-right: 2px solid var(--brand-accent);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .banner-label span {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--brand-accent);
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      transform: rotate(180deg);
     }
 
     .track-wrapper {
@@ -109,11 +51,10 @@
 
     .track {
       display: flex;
-      gap: 0;
-      /* JS sets width & animation */
+      align-items: center;
       white-space: nowrap;
       will-change: transform;
-      animation: scroll-left 50s linear infinite;
+      animation: scroll-left 60s linear infinite;
     }
 
     .track:hover {
@@ -123,99 +64,109 @@
     .quote-card {
       display: inline-flex;
       flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding: 0 2.4rem;
-      border-right: 1px solid rgba(212, 160, 23, 0.25);
-      max-width: 420px;
-      min-width: 280px;
+      text-align: center;
+      padding: 0 3rem;
+      border-right: 1px solid rgba(212, 160, 23, 0.3);
+      min-width: 320px;
+      max-width: 480px;
       flex-shrink: 0;
+      gap: 5px;
     }
 
     .quote-text {
-      font-size: clamp(0.8rem, 1.4vw, 0.95rem);
+      font-family: 'Merriweather', Georgia, serif;
       font-style: italic;
+      font-size: clamp(0.78rem, 1.3vw, 0.9rem);
       color: var(--text-light);
-      line-height: 1.5;
+      line-height: 1.55;
       white-space: normal;
     }
 
-    .quote-text::before { content: '\201C'; color: var(--brand-accent); font-size: 1.4em; line-height: 0; vertical-align: -0.3em; margin-right: 2px; }
-    .quote-text::after  { content: '\201D'; color: var(--brand-accent); font-size: 1.4em; line-height: 0; vertical-align: -0.3em; margin-left:  2px; }
+    .quote-text::before {
+      content: '\201C';
+      color: var(--brand-accent);
+      font-size: 1.3em;
+      line-height: 0;
+      vertical-align: -0.25em;
+      margin-right: 1px;
+    }
+
+    .quote-text::after {
+      content: '\201D';
+      color: var(--brand-accent);
+      font-size: 1.3em;
+      line-height: 0;
+      vertical-align: -0.25em;
+      margin-left: 1px;
+    }
+
+    .quote-course {
+      font-family: 'Lato', 'Segoe UI', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--brand-accent);
+      opacity: 0.85;
+      white-space: normal;
+      text-align: center;
+    }
 
     .quote-star {
-      margin-top: 6px;
+      font-size: 0.7rem;
       color: var(--brand-accent);
-      font-size: 0.75rem;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
+      text-align: center;
     }
 
     @keyframes scroll-left {
       0%   { transform: translateX(0); }
       100% { transform: translateX(-50%); }
     }
-
-    /* ── Below-banner demo content ── */
-    .page-body {
-      padding: 3rem 2rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      max-width: 640px;
-    }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Lewis Anderson Enterprises</h1>
-    <p>Professional AI &amp; Technology Training</p>
-  </header>
-
   <div class="testimonial-banner" role="region" aria-label="Client testimonials">
-    <div class="banner-label"><span>What clients say</span></div>
     <div class="track-wrapper">
       <div class="track" id="quoteTrack"></div>
     </div>
   </div>
 
-  <div class="page-body">
-    <p>Hover over the banner to pause scrolling.</p>
-  </div>
-
   <script>
+    const AI_COURSE  = "A Clerk & Councillor's Introduction to Artificial Intelligence";
+    const AGAR_COURSE = "Taking the \u2018GRRR\u2019 out of AGAR: Financial Year End Prep for Town & Parish Councils";
+
     const quotes = [
-      "Great course, will definitely start using for agenda setting and minute taking.",
-      "Very well presented and informative.",
-      "A subject I have avoided, brought to life.",
-      "Don't feel like a luddite now.",
-      "Thank you again for a very informative session.",
-      "Clear format, especially useful on Assertion 10.",
-      "Great to have training from someone who actually works in the sector day to day.",
-      "Really enjoyed the seminar\u2026 it\u2019s a new world. Thanks for the opportunity.",
-      "Thank you for persisting in spite of technological problems.",
-      "Not right now \u2014 thank you, you explained it fabulously!",
+      { text: "Great course, will definitely start using for agenda setting and minute taking.", course: AI_COURSE },
+      { text: "Thank you again for a very informative session.", course: AGAR_COURSE },
+      { text: "Very well presented and informative.", course: AI_COURSE },
+      { text: "Clear format, especially useful on Assertion 10.", course: AGAR_COURSE },
+      { text: "A subject I have avoided, brought to life.", course: AI_COURSE },
+      { text: "Great to have training from someone who actually works in the sector day to day.", course: AGAR_COURSE },
+      { text: "Really enjoyed the seminar\u2026 it\u2019s a new world. Thanks for the opportunity.", course: AI_COURSE },
+      { text: "Don\u2019t feel like a luddite now.", course: AI_COURSE },
     ];
 
-    function buildCard(text) {
+    function buildCard({ text, course }) {
       const card = document.createElement('div');
       card.className = 'quote-card';
       card.innerHTML = `
-        <span class="quote-text">${text}</span>
         <span class="quote-star" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        <span class="quote-text">${text}</span>
+        <span class="quote-course">${course}</span>
       `;
       return card;
     }
 
     const track = document.getElementById('quoteTrack');
-
-    // Render two full sets so seamless looping works
     [...quotes, ...quotes].forEach(q => track.appendChild(buildCard(q)));
 
-    // Adjust animation duration proportional to content width for consistent speed
     function calibrateSpeed() {
-      const totalW = track.scrollWidth;
-      const pxPerSec = 80; // tweak for faster/slower scroll
-      const dur = (totalW / 2) / pxPerSec;
+      const pxPerSec = 55;
+      const dur = (track.scrollWidth / 2) / pxPerSec;
       track.style.animationDuration = dur.toFixed(1) + 's';
     }
 
