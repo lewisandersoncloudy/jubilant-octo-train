@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lewis Anderson Enterprises – Testimonials</title>
+  <style>
+    /* ── Brand tokens ── */
+    :root {
+      --brand-dark:   #1a2e4a;
+      --brand-mid:    #2c5282;
+      --brand-accent: #d4a017;
+      --text-light:   #f0f4f8;
+      --text-muted:   #cbd5e0;
+      --banner-h:     96px;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--brand-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header (placeholder for page context) ── */
+    header {
+      width: 100%;
+      padding: 2.5rem 2rem 1.5rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--brand-accent);
+    }
+
+    header p {
+      margin-top: 0.4rem;
+      font-size: 1rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Testimonial banner ── */
+    .testimonial-banner {
+      width: 100%;
+      background: linear-gradient(135deg, var(--brand-mid) 0%, #1e3a5f 100%);
+      border-top: 3px solid var(--brand-accent);
+      border-bottom: 3px solid var(--brand-accent);
+      height: var(--banner-h);
+      overflow: hidden;
+      position: relative;
+      /* Fade edges */
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 8%,
+        black 92%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 8%,
+        black 92%,
+        transparent 100%
+      );
+    }
+
+    .banner-label {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 8%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brand-dark);
+      border-right: 2px solid var(--brand-accent);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .banner-label span {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--brand-accent);
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+    }
+
+    .track-wrapper {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .track {
+      display: flex;
+      gap: 0;
+      /* JS sets width & animation */
+      white-space: nowrap;
+      will-change: transform;
+      animation: scroll-left 50s linear infinite;
+    }
+
+    .track:hover {
+      animation-play-state: paused;
+    }
+
+    .quote-card {
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 2.4rem;
+      border-right: 1px solid rgba(212, 160, 23, 0.25);
+      max-width: 420px;
+      min-width: 280px;
+      flex-shrink: 0;
+    }
+
+    .quote-text {
+      font-size: clamp(0.8rem, 1.4vw, 0.95rem);
+      font-style: italic;
+      color: var(--text-light);
+      line-height: 1.5;
+      white-space: normal;
+    }
+
+    .quote-text::before { content: '\201C'; color: var(--brand-accent); font-size: 1.4em; line-height: 0; vertical-align: -0.3em; margin-right: 2px; }
+    .quote-text::after  { content: '\201D'; color: var(--brand-accent); font-size: 1.4em; line-height: 0; vertical-align: -0.3em; margin-left:  2px; }
+
+    .quote-star {
+      margin-top: 6px;
+      color: var(--brand-accent);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+    }
+
+    @keyframes scroll-left {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ── Below-banner demo content ── */
+    .page-body {
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      max-width: 640px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Lewis Anderson Enterprises</h1>
+    <p>Professional AI &amp; Technology Training</p>
+  </header>
+
+  <div class="testimonial-banner" role="region" aria-label="Client testimonials">
+    <div class="banner-label"><span>What clients say</span></div>
+    <div class="track-wrapper">
+      <div class="track" id="quoteTrack"></div>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <p>Hover over the banner to pause scrolling.</p>
+  </div>
+
+  <script>
+    const quotes = [
+      "Great course, will definitely start using for agenda setting and minute taking.",
+      "Very well presented and informative.",
+      "A subject I have avoided, brought to life.",
+      "Don't feel like a luddite now.",
+      "Thank you again for a very informative session.",
+      "Clear format, especially useful on Assertion 10.",
+      "Great to have training from someone who actually works in the sector day to day.",
+      "Really enjoyed the seminar\u2026 it\u2019s a new world. Thanks for the opportunity.",
+      "Thank you for persisting in spite of technological problems.",
+      "Not right now \u2014 thank you, you explained it fabulously!",
+    ];
+
+    function buildCard(text) {
+      const card = document.createElement('div');
+      card.className = 'quote-card';
+      card.innerHTML = `
+        <span class="quote-text">${text}</span>
+        <span class="quote-star" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+      `;
+      return card;
+    }
+
+    const track = document.getElementById('quoteTrack');
+
+    // Render two full sets so seamless looping works
+    [...quotes, ...quotes].forEach(q => track.appendChild(buildCard(q)));
+
+    // Adjust animation duration proportional to content width for consistent speed
+    function calibrateSpeed() {
+      const totalW = track.scrollWidth;
+      const pxPerSec = 80; // tweak for faster/slower scroll
+      const dur = (totalW / 2) / pxPerSec;
+      track.style.animationDuration = dur.toFixed(1) + 's';
+    }
+
+    calibrateSpeed();
+    window.addEventListener('resize', calibrateSpeed);
+  </script>
+</body>
+</html>
