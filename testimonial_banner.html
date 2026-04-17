@@ -9,15 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --text-white:   #ffffff;
-      --banner-h:     120px;
+      --gold:      #d4a017;
+      --gold-dim:  rgba(212, 160, 23, 0.35);
+      --banner-h:  118px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Minimal body — remove when embedding into your site */
+    /* Preview body only — remove when embedding */
     body {
-      background: #f5f5f5;
+      background: #2a2a2a;
       font-family: 'Lato', 'Segoe UI', Tahoma, sans-serif;
     }
 
@@ -25,15 +26,18 @@
     .testimonial-banner {
       width: 100%;
       height: var(--banner-h);
-      background: transparent;
-      border: 2px solid #ffffff;
+      background: rgba(20, 36, 58, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-top: 1px solid var(--gold);
+      border-bottom: 1px solid var(--gold);
       overflow: hidden;
       position: relative;
       -webkit-mask-image: linear-gradient(
-        to right, transparent 0%, black 6%, black 94%, transparent 100%
+        to right, transparent 0%, black 5%, black 95%, transparent 100%
       );
       mask-image: linear-gradient(
-        to right, transparent 0%, black 6%, black 94%, transparent 100%
+        to right, transparent 0%, black 5%, black 95%, transparent 100%
       );
     }
 
@@ -63,57 +67,55 @@
       justify-content: center;
       text-align: center;
       padding: 0 3rem;
-      border-right: 1px solid rgba(255, 255, 255, 0.4);
+      border-right: 1px solid var(--gold-dim);
       min-width: 320px;
-      max-width: 480px;
+      max-width: 500px;
       flex-shrink: 0;
-      gap: 5px;
+      gap: 4px;
+    }
+
+    .quote-star {
+      font-size: 0.72rem;
+      color: var(--gold);
+      letter-spacing: 4px;
     }
 
     .quote-text {
       font-family: 'Merriweather', Georgia, serif;
       font-style: italic;
-      font-size: clamp(0.78rem, 1.3vw, 0.9rem);
+      font-size: clamp(0.8rem, 1.35vw, 0.92rem);
       color: #ffffff;
-      line-height: 1.55;
+      line-height: 1.5;
       white-space: normal;
     }
 
     .quote-text::before {
       content: '\201C';
-      color: #ffffff;
-      font-size: 1.3em;
+      color: var(--gold);
+      font-size: 1.25em;
       line-height: 0;
-      vertical-align: -0.25em;
+      vertical-align: -0.22em;
       margin-right: 1px;
     }
 
     .quote-text::after {
       content: '\201D';
-      color: #ffffff;
-      font-size: 1.3em;
+      color: var(--gold);
+      font-size: 1.25em;
       line-height: 0;
-      vertical-align: -0.25em;
+      vertical-align: -0.22em;
       margin-left: 1px;
     }
 
     .quote-course {
       font-family: 'Lato', 'Segoe UI', sans-serif;
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #ffffff;
-      opacity: 0.75;
+      color: var(--gold);
+      opacity: 0.9;
       white-space: normal;
-      text-align: center;
-    }
-
-    .quote-star {
-      font-size: 0.7rem;
-      color: #ffffff;
-      letter-spacing: 3px;
-      text-align: center;
     }
 
     @keyframes scroll-left {
