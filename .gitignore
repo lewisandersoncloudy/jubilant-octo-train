@@ -5,6 +5,10 @@
 output/
 *.pdf
 
+# Flask instance folder (SQLite DB, instance config)
+instance/
+*.db
+
 # Python
 __pycache__/
 *.py[cod]
