@@ -5,6 +5,9 @@
 output/
 *.pdf
 
+# SQLite database (runtime artifact)
+*.db
+
 # Python
 __pycache__/
 *.py[cod]
