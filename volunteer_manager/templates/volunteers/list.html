@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Volunteers{% endblock %}
+{% block topbar_title %}Volunteers{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('add-modal').style.display='flex'">+ Add Volunteer</button>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Volunteers <span class="muted" style="font-weight:400;font-size:1rem;">({{ volunteers|length }} active)</span></h2>
+  <div style="display:flex;gap:.5rem">
+    <input id="search" type="search" placeholder="Search…" style="padding:.4rem .75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem;width:220px">
+    <select id="status-filter" onchange="filterChange()" style="padding:.4rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.875rem">
+      <option value="active" {% if status_filter=='active' %}selected{% endif %}>Active</option>
+      <option value="on_hold" {% if status_filter=='on_hold' %}selected{% endif %}>On Hold</option>
+      <option value="left" {% if status_filter=='left' %}selected{% endif %}>Left</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table id="vol-table">
+      <thead>
+        <tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>Skills</th><th>Hours</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in volunteers %}
+        <tr>
+          <td><a href="{{ url_for('ui.volunteer_detail', org_id=org.id, volunteer_id=v.id) }}">{{ v.full_name }}</a></td>
+          <td>{{ v.email }}</td>
+          <td>{{ v.phone or '–' }}</td>
+          <td>
+            {% for vs in v.skills[:3] %}
+              <span class="badge badge-blue">{{ vs.skill.name }}</span>
+            {% endfor %}
+            {% if v.skills|length > 3 %}<span class="muted">+{{ v.skills|length - 3 }}</span>{% endif %}
+          </td>
+          <td>{{ "%.1f"|format(v.total_hours) }}h</td>
+          <td>
+            {% if v.status == 'active' %}<span class="badge badge-green">Active</span>
+            {% elif v.status == 'on_hold' %}<span class="badge badge-yellow">On Hold</span>
+            {% else %}<span class="badge badge-gray">Left</span>{% endif %}
+          </td>
+          <td><a class="btn btn-outline btn-sm" href="{{ url_for('ui.volunteer_detail', org_id=org.id, volunteer_id=v.id) }}">View</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted" style="text-align:center;padding:2rem">No volunteers found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Volunteer Modal -->
+<div id="add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:500px;max-height:90vh;overflow-y:auto">
+    <h2 style="margin-bottom:1.5rem">Add Volunteer</h2>
+    <form id="add-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div><label style="font-size:.85rem;font-weight:500">First Name *</label><br><input name="first_name" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+        <div><label style="font-size:.85rem;font-weight:500">Last Name *</label><br><input name="last_name" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      </div>
+      <div style="margin-bottom:1rem"><label style="font-size:.85rem;font-weight:500">Email *</label><br><input name="email" type="email" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:1rem"><label style="font-size:.85rem;font-weight:500">Phone</label><br><input name="phone" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:1rem"><label style="font-size:.85rem;font-weight:500">Interests / notes</label><br><textarea name="interests" rows="2" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></textarea></div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('add-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG = {{ org.id }};
+
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#vol-table tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+function filterChange() {
+  const status = document.getElementById('status-filter').value;
+  window.location = `/org/${ORG}/volunteers?status=${status}`;
+}
+
+document.getElementById('add-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  body.organisation_id = ORG;
+  const r = await fetch('/api/volunteers/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (r.ok) { window.location.reload(); }
+  else { const err = await r.json(); alert(err.description || 'Error saving volunteer'); }
+});
+</script>
+{% endblock %}

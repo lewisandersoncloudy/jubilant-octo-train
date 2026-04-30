@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Compliance{% endblock %}
+{% block topbar_title %}Compliance Overview{% endblock %}
+
+{% block content %}
+<div class="stats-grid" id="comp-stats">
+  <div class="stat-tile"><div class="label">With Valid DBS</div><div class="value" id="s-dbs">–</div></div>
+  <div class="stat-tile"><div class="label">DBS Missing / Expired</div><div class="value danger" id="s-dbs-bad">–</div></div>
+  <div class="stat-tile"><div class="label">Fully Trained</div><div class="value" id="s-trained">–</div></div>
+  <div class="stat-tile warn"><div class="label">Expiring (90 days)</div><div class="value" id="s-expiring">–</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h2>DBS Expiring Soon</h2></div>
+    <div class="card-body" id="dbs-expiring"><p class="muted">Loading…</p></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>Training Expiring Soon</h2></div>
+    <div class="card-body" id="training-expiring"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h2>Overdue Items</h2>
+    <span class="badge badge-red" id="overdue-count">–</span>
+  </div>
+  <div class="card-body" id="overdue-panel"><p class="muted">Loading…</p></div>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h2>Safeguarding Concerns</h2>
+    <a class="btn btn-outline btn-sm" href="#" onclick="document.getElementById('sg-modal').style.display='flex'">+ Log Concern</a>
+  </div>
+  <div class="card-body" id="sg-panel"><p class="muted">Loading…</p></div>
+</div>
+
+<!-- Safeguarding Modal -->
+<div id="sg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:500px">
+    <h2 style="margin-bottom:1rem">Log Safeguarding Concern</h2>
+    <div class="alert alert-warn">This record is stored securely. Only authorised coordinators can view it.</div>
+    <form id="sg-form">
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Reported by *</label><br><input name="reported_by" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Category</label><br>
+        <select name="category" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem">
+          <option value="">– select –</option>
+          <option>welfare</option><option>conduct</option><option>disclosure</option><option>data_protection</option><option>other</option>
+        </select>
+      </div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Severity</label><br>
+        <select name="severity" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem">
+          <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
+        </select>
+      </div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Description *</label><br><textarea name="description" rows="4" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></textarea></div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('sg-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG = {{ org.id }};
+
+async function load() {
+  const [overview, expiring, overdue, concerns] = await Promise.all([
+    fetch(`/api/reports/compliance/overview?org_id=${ORG}`).then(r=>r.json()),
+    fetch(`/api/compliance/expiring?org_id=${ORG}&days=90`).then(r=>r.json()),
+    fetch(`/api/compliance/overdue?org_id=${ORG}`).then(r=>r.json()),
+    fetch(`/api/compliance/safeguarding?org_id=${ORG}`).then(r=>r.json()),
+  ]);
+
+  document.getElementById('s-dbs').textContent = overview.dbs?.with_valid_dbs ?? '–';
+  document.getElementById('s-dbs-bad').textContent = overview.dbs?.without_valid_dbs ?? '–';
+  document.getElementById('s-trained').textContent = overview.training?.fully_trained ?? '–';
+  document.getElementById('s-expiring').textContent =
+    (expiring.dbs.length + expiring.training.length);
+
+  const renderItems = (items, typeLabel) => items.length
+    ? items.map(i => {
+        const cls = i.days_until_expiry <= 30 ? 'badge-red' : 'badge-yellow';
+        return `<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid #e2e8f0">
+          <span><strong>${i.volunteer_name}</strong></span>
+          <span class="badge ${cls}">${i.days_until_expiry}d</span>
+        </div>`;
+      }).join('')
+    : '<p class="muted" style="color:#16a34a">✓ None expiring soon.</p>';
+
+  document.getElementById('dbs-expiring').innerHTML = renderItems(expiring.dbs, 'DBS');
+  document.getElementById('training-expiring').innerHTML = renderItems(expiring.training, 'Training');
+
+  // Overdue
+  const total = overdue.dbs.length + overdue.training.length;
+  document.getElementById('overdue-count').textContent = total;
+  const overdueEl = document.getElementById('overdue-panel');
+  if (!total) { overdueEl.innerHTML = '<p class="muted" style="color:#16a34a">✓ No overdue items.</p>'; }
+  else {
+    const all = [
+      ...overdue.dbs.map(i => ({name: i.volunteer_name, type: 'DBS', exp: i.expiry_date})),
+      ...overdue.training.map(i => ({name: i.volunteer_name, type: 'Training', exp: i.expiry_date})),
+    ];
+    overdueEl.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Volunteer</th><th>Type</th><th>Expired</th></tr></thead>
+      <tbody>${all.map(i => `<tr><td>${i.name}</td><td>${i.type}</td><td><span class="badge badge-red">${i.exp}</span></td></tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  // Safeguarding
+  const sgEl = document.getElementById('sg-panel');
+  const SEV = {low:'badge-gray',medium:'badge-yellow',high:'badge-red',critical:'badge-red'};
+  sgEl.innerHTML = concerns.length
+    ? `<div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Reported By</th><th>Category</th><th>Severity</th><th>Status</th></tr></thead>
+        <tbody>${concerns.map(c => `<tr>
+          <td>${c.reported_at?.slice(0,10)}</td>
+          <td>${c.reported_by}</td>
+          <td>${c.category || '–'}</td>
+          <td><span class="badge ${SEV[c.severity]||'badge-gray'}">${c.severity}</span></td>
+          <td><span class="badge badge-blue">${c.status}</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`
+    : '<p class="muted">No safeguarding concerns recorded.</p>';
+}
+
+document.getElementById('sg-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  body.organisation_id = ORG;
+  const r = await fetch('/api/compliance/safeguarding', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (r.ok) { document.getElementById('sg-modal').style.display='none'; load(); }
+  else alert('Error saving concern');
+});
+
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VolunteerHub – Select Organisation</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .box { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 2rem; width: 400px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    h1 { font-size: 1.4rem; margin-bottom: 1.5rem; }
+    a { display: block; padding: .75rem 1rem; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: .5rem; text-decoration: none; color: #0f172a; }
+    a:hover { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>🌱 VolunteerHub</h1>
+    <p style="color:#64748b; margin-bottom:1.5rem;">Select your organisation to continue.</p>
+    {% for org in organisations %}
+    <a href="{{ url_for('ui.dashboard', org_id=org.id) }}">
+      <strong>{{ org.name }}</strong>
+      {% if org.type %}<br><small style="color:#64748b">{{ org.type|title }}</small>{% endif %}
+    </a>
+    {% else %}
+    <p>No organisations found. <a href="/api/organisations" style="display:inline">Create one via the API</a>.</p>
+    {% endfor %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block topbar_title %}Reports & Governance{% endblock %}
+
+{% block content %}
+<div class="stats-grid" id="top-stats">
+  <div class="stat-tile success"><div class="label">Total Hours (this year)</div><div class="value" id="r-hours">–</div></div>
+  <div class="stat-tile success"><div class="label">Estimated Impact Value</div><div class="value" id="r-value">–</div></div>
+  <div class="stat-tile"><div class="label">Active Volunteers</div><div class="value" id="r-vols">–</div></div>
+  <div class="stat-tile"><div class="label">DBS Compliance</div><div class="value" id="r-dbs">–</div></div>
+  <div class="stat-tile"><div class="label">Training Compliance</div><div class="value" id="r-training">–</div></div>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-header">
+    <h2>Volunteer Activity (this year)</h2>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div class="card-body" id="activity-panel"><p class="muted">Loading…</p></div>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-header"><h2>Inactive Volunteers (90+ days)</h2></div>
+  <div class="card-body" id="inactive-panel"><p class="muted">Loading…</p></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Completed Events</h2></div>
+  <div class="card-body" id="events-panel"><p class="muted">Loading…</p></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG = {{ org.id }};
+const thisYear = new Date().getFullYear() + '-01-01';
+let activityData = [];
+
+async function load() {
+  const [summary, compliance, activity, inactive, events] = await Promise.all([
+    fetch(`/api/reports/summary?org_id=${ORG}`).then(r=>r.json()),
+    fetch(`/api/reports/compliance/overview?org_id=${ORG}`).then(r=>r.json()),
+    fetch(`/api/reports/volunteers/activity?org_id=${ORG}&since=${thisYear}`).then(r=>r.json()),
+    fetch(`/api/reports/inactivity?org_id=${ORG}&days=90`).then(r=>r.json()),
+    fetch(`/api/reports/events/summary?org_id=${ORG}&since=${thisYear}`).then(r=>r.json()),
+  ]);
+
+  document.getElementById('r-hours').textContent = summary.hours.total.toFixed(0) + 'h';
+  document.getElementById('r-value').textContent = '£' + Math.round(summary.hours.estimated_value_gbp).toLocaleString();
+  document.getElementById('r-vols').textContent = summary.volunteers.active;
+  document.getElementById('r-dbs').textContent = (compliance.dbs?.percent ?? 0) + '%';
+  document.getElementById('r-training').textContent = (compliance.training?.percent ?? 0) + '%';
+
+  // Activity table
+  activityData = activity.volunteers;
+  const actEl = document.getElementById('activity-panel');
+  actEl.innerHTML = activityData.length
+    ? `<div class="table-wrap"><table>
+        <thead><tr><th>Volunteer</th><th>Email</th><th>Hours</th><th>Miles</th><th>Est. Value</th></tr></thead>
+        <tbody>${activityData.map(v => `<tr>
+          <td>${v.name}</td><td>${v.email}</td>
+          <td><strong>${v.hours.toFixed(1)}</strong></td>
+          <td>${v.miles.toFixed(0)}</td>
+          <td>£${Math.round(v.estimated_value_gbp).toLocaleString()}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>`
+    : '<p class="muted">No activity recorded this year.</p>';
+
+  // Inactive
+  const inEl = document.getElementById('inactive-panel');
+  inEl.innerHTML = inactive.length
+    ? `<div class="table-wrap"><table>
+        <thead><tr><th>Volunteer</th><th>Last Assignment</th><th>Days Inactive</th></tr></thead>
+        <tbody>${inactive.map(i => `<tr>
+          <td>${i.volunteer.full_name}</td>
+          <td>${i.last_assignment || 'Never'}</td>
+          <td><span class="badge badge-yellow">${i.days_inactive ?? '–'}</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`
+    : '<p class="muted" style="color:#16a34a">✓ All volunteers active in the last 90 days.</p>';
+
+  // Events
+  const evEl = document.getElementById('events-panel');
+  evEl.innerHTML = events.length
+    ? `<div class="table-wrap"><table>
+        <thead><tr><th>Event</th><th>Date</th><th>Assigned</th><th>Attended</th><th>Rate</th><th>Hours</th></tr></thead>
+        <tbody>${events.map(e => `<tr>
+          <td>${e.name}</td><td>${e.date}</td>
+          <td>${e.volunteers_assigned}</td><td>${e.volunteers_attended}</td>
+          <td>${e.attendance_rate}%</td><td>${e.total_hours.toFixed(1)}h</td>
+        </tr>`).join('')}</tbody>
+      </table></div>`
+    : '<p class="muted">No completed events this year.</p>';
+}
+
+function exportCSV() {
+  if (!activityData.length) return;
+  const rows = [['Name','Email','Hours','Miles','Est. Value GBP']];
+  activityData.forEach(v => rows.push([v.name, v.email, v.hours, v.miles, v.estimated_value_gbp]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'volunteer_activity.csv';
+  a.click();
+}
+
+load();
+</script>
+{% endblock %}

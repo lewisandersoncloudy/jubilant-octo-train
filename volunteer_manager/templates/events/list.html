@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Events{% endblock %}
+{% block topbar_title %}Events{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('add-modal').style.display='flex'">+ New Event</button>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:1rem">Upcoming Events</h2>
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Date</th><th>Location</th><th>Volunteers</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for e in upcoming %}
+        <tr>
+          <td><a href="{{ url_for('ui.event_detail', org_id=org.id, event_id=e.id) }}">{{ e.name }}</a></td>
+          <td>{{ e.start_datetime.strftime('%d %b %Y %H:%M') }}</td>
+          <td>{{ e.location or '–' }}</td>
+          <td>
+            <span class="badge {% if e.total_volunteers_assigned >= e.total_volunteers_needed and e.total_volunteers_needed > 0 %}badge-green{% else %}badge-yellow{% endif %}">
+              {{ e.total_volunteers_assigned }}/{{ e.total_volunteers_needed }}
+            </span>
+          </td>
+          <td><span class="badge badge-blue">{{ e.status|title }}</span></td>
+          <td><a class="btn btn-outline btn-sm" href="{{ url_for('ui.event_detail', org_id=org.id, event_id=e.id) }}">View</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted" style="text-align:center;padding:2rem">No upcoming events.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if past %}
+<h2 style="margin-bottom:1rem">Past Events</h2>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Date</th><th>Location</th><th>Attended</th><th></th></tr></thead>
+      <tbody>
+        {% for e in past %}
+        <tr>
+          <td><a href="{{ url_for('ui.event_detail', org_id=org.id, event_id=e.id) }}">{{ e.name }}</a></td>
+          <td>{{ e.start_datetime.strftime('%d %b %Y') }}</td>
+          <td>{{ e.location or '–' }}</td>
+          <td><span class="badge badge-gray">{{ e.total_volunteers_assigned }}</span></td>
+          <td><a class="btn btn-outline btn-sm" href="{{ url_for('ui.event_detail', org_id=org.id, event_id=e.id) }}">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Add Event Modal -->
+<div id="add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:520px;max-height:90vh;overflow-y:auto">
+    <h2 style="margin-bottom:1.5rem">New Event</h2>
+    <form id="add-form">
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Event Name *</label><br><input name="name" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Description</label><br><textarea name="description" rows="2" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></textarea></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Location</label><br><input name="location" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+        <div><label style="font-size:.85rem;font-weight:500">Start *</label><br><input name="start_datetime" type="datetime-local" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+        <div><label style="font-size:.85rem;font-weight:500">End</label><br><input name="end_datetime" type="datetime-local" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('add-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Event</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG = {{ org.id }};
+document.getElementById('add-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  body.organisation_id = ORG;
+  const r = await fetch('/api/events/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (r.ok) { window.location.reload(); }
+  else { const err = await r.json(); alert(err.description || 'Error'); }
+});
+</script>
+{% endblock %}

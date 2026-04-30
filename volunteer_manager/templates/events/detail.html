@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}{{ event.name }}{% endblock %}
+{% block topbar_title %}{{ event.name }}{% endblock %}
+{% block topbar_actions %}
+  <a class="btn btn-outline btn-sm" href="{{ url_for('ui.events', org_id=org.id) }}">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid-2" style="margin-bottom:1.5rem">
+  <div class="card">
+    <div class="card-header">
+      <h2>Event Details</h2>
+      <span class="badge {% if event.status == 'planned' %}badge-blue{% elif event.status == 'active' %}badge-green{% elif event.status == 'completed' %}badge-gray{% else %}badge-red{% endif %}">{{ event.status|title }}</span>
+    </div>
+    <div class="card-body">
+      <table style="width:100%;font-size:.9rem">
+        <tr><td class="muted" style="padding:.4rem 0;width:100px">Date</td><td>{{ event.start_datetime.strftime('%d %b %Y') }}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Time</td><td>{{ event.start_datetime.strftime('%H:%M') }}{% if event.end_datetime %} – {{ event.end_datetime.strftime('%H:%M') }}{% endif %}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Location</td><td>{{ event.location or '–' }}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Type</td><td>{{ event.event_type|replace('_',' ')|title }}</td></tr>
+        {% if event.description %}<tr><td class="muted" style="padding:.4rem 0">Notes</td><td>{{ event.description }}</td></tr>{% endif %}
+      </table>
+      <div style="margin-top:1rem;display:flex;gap:.5rem">
+        <select id="status-sel" style="padding:.35rem;border:1px solid #e2e8f0;border-radius:4px;font-size:.875rem">
+          {% for s in ['planned','active','completed','cancelled'] %}
+          <option {% if event.status == s %}selected{% endif %} value="{{ s }}">{{ s|title }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="updateStatus()">Update Status</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Role Coverage</h2>
+    </div>
+    <div class="card-body">
+      {% for er in event.event_roles %}
+      <div style="margin-bottom:.75rem">
+        <div style="display:flex;justify-content:space-between;margin-bottom:.25rem">
+          <strong>{{ er.role.name if er.role else 'Unknown' }}</strong>
+          <span class="badge {% if er.slots_available == 0 %}badge-green{% else %}badge-yellow{% endif %}">{{ er.slots_filled }}/{{ er.slots_required }}</span>
+        </div>
+        <div style="background:#e2e8f0;border-radius:99px;height:6px">
+          <div style="background:{% if er.slots_available == 0 %}#16a34a{% else %}#d97706{% endif %};width:{{ [(er.slots_filled / er.slots_required * 100)|int, 100]|min }}%;height:6px;border-radius:99px"></div>
+        </div>
+      </div>
+      {% else %}
+      <p class="muted">No roles defined for this event.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Volunteer Assignments</h2>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('assign-modal').style.display='flex'">+ Assign Volunteer</button>
+  </div>
+  <div class="card-body">
+    <div id="assignments-list"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h2>Available Volunteers</h2>
+    <button class="btn btn-outline btn-sm" onclick="loadAvailable()">Refresh</button>
+  </div>
+  <div class="card-body" id="available-panel"><p class="muted">Click Refresh to check availability.</p></div>
+</div>
+
+<!-- Assign Modal -->
+<div id="assign-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:420px">
+    <h2 style="margin-bottom:1rem">Assign Volunteer</h2>
+    <form id="assign-form">
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.85rem;font-weight:500">Role Slot *</label><br>
+        <select name="event_role_id" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem">
+          {% for er in event.event_roles %}
+          <option value="{{ er.id }}">{{ er.role.name if er.role else '?' }} ({{ er.slots_filled }}/{{ er.slots_required }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.85rem;font-weight:500">Volunteer ID</label><br>
+        <input name="volunteer_id" type="number" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem" placeholder="Enter volunteer ID">
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('assign-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Assign</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EID = {{ event.id }};
+const ORG = {{ org.id }};
+const START = '{{ event.start_datetime.isoformat() }}';
+const END = '{{ event.end_datetime.isoformat() if event.end_datetime else '' }}';
+
+async function loadAssignments() {
+  const data = await fetch(`/api/events/${EID}/assignments`).then(r=>r.json());
+  const el = document.getElementById('assignments-list');
+  if (!data.length) { el.innerHTML = '<p class="muted">No volunteers assigned yet.</p>'; return; }
+  const STATUS_BADGE = {assigned:'badge-blue', confirmed:'badge-green', declined:'badge-red', no_show:'badge-gray'};
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Volunteer</th><th>Role</th><th>Status</th><th></th></tr></thead>
+    <tbody>${data.map(a => `<tr>
+      <td><a href="/org/${ORG}/volunteers/${a.volunteer?.id}">${a.volunteer?.full_name || '–'}</a></td>
+      <td>${a.role?.name || '–'}</td>
+      <td><span class="badge ${STATUS_BADGE[a.status] || 'badge-gray'}">${a.status}</span></td>
+      <td>
+        <select onchange="updateAssignment(${a.id}, this.value)" style="padding:.2rem;border:1px solid #e2e8f0;border-radius:4px;font-size:.8rem">
+          ${['assigned','confirmed','declined','no_show'].map(s => `<option ${s===a.status?'selected':''} value="${s}">${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+async function updateAssignment(id, status) {
+  await fetch(`/api/events/${EID}/assignments/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status})});
+  loadAssignments();
+}
+
+async function updateStatus() {
+  const status = document.getElementById('status-sel').value;
+  await fetch(`/api/events/${EID}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status})});
+  window.location.reload();
+}
+
+async function loadAvailable() {
+  const url = `/api/scheduling/available?org_id=${ORG}&start_datetime=${START}${END ? '&end_datetime='+END : ''}`;
+  const data = await fetch(url).then(r=>r.json());
+  const el = document.getElementById('available-panel');
+  if (!data.available.length) { el.innerHTML = '<p class="muted">No volunteers available.</p>'; return; }
+  el.innerHTML = `<p class="muted" style="margin-bottom:.75rem">${data.total_available} volunteer(s) available</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Email</th><th>Availability</th><th></th></tr></thead>
+      <tbody>${data.available.map(a =>
+        `<tr>
+          <td>${a.volunteer.full_name}</td>
+          <td>${a.volunteer.email}</td>
+          <td><span class="badge ${a.availability==='confirmed'?'badge-green':'badge-yellow'}">${a.availability}</span></td>
+          <td><button class="btn btn-outline btn-sm" onclick="quickAssign(${a.volunteer.id})">Assign</button></td>
+        </tr>`
+      ).join('')}</tbody>
+    </table></div>`;
+}
+
+async function quickAssign(volunteerId) {
+  const roleId = document.querySelector('#assign-form [name=event_role_id]')?.value;
+  if (!roleId) { alert('Open the assign modal and select a role first.'); return; }
+  const r = await fetch(`/api/events/${EID}/assignments`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({volunteer_id: volunteerId, event_role_id: parseInt(roleId)})
+  });
+  if (r.ok) { loadAssignments(); loadAvailable(); }
+  else { const e = await r.json(); alert(e.message || 'Error'); }
+}
+
+document.getElementById('assign-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {volunteer_id: parseInt(fd.get('volunteer_id')), event_role_id: parseInt(fd.get('event_role_id'))};
+  const r = await fetch(`/api/events/${EID}/assignments`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (r.ok) { document.getElementById('assign-modal').style.display='none'; loadAssignments(); }
+  else { const err = await r.json(); alert(err.message || 'Error'); }
+});
+
+loadAssignments();
+</script>
+{% endblock %}

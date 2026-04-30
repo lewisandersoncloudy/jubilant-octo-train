@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+  <a class="btn btn-primary btn-sm" href="{{ url_for('ui.volunteers', org_id=org.id) }}">+ Add Volunteer</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>{{ org.name }}</h2>
+    <p class="muted">Volunteer operations overview</p>
+  </div>
+</div>
+
+<div id="stats-grid" class="stats-grid">
+  <div class="stat-tile"><div class="label">Active Volunteers</div><div class="value" id="stat-active">–</div></div>
+  <div class="stat-tile success"><div class="label">Total Hours Volunteered</div><div class="value" id="stat-hours">–</div></div>
+  <div class="stat-tile"><div class="label">Upcoming Events</div><div class="value" id="stat-events">–</div></div>
+  <div class="stat-tile warn"><div class="label">Compliance Alerts</div><div class="value" id="stat-compliance">–</div></div>
+  <div class="stat-tile"><div class="label">Estimated Impact Value</div><div class="value" id="stat-value">–</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h2>Upcoming Events</h2>
+      <a class="btn btn-outline btn-sm" href="{{ url_for('ui.events', org_id=org.id) }}">View all</a>
+    </div>
+    <div class="card-body">
+      <div id="upcoming-events"><p class="muted">Loading…</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Compliance Alerts</h2>
+      <a class="btn btn-outline btn-sm" href="{{ url_for('ui.compliance', org_id=org.id) }}">View all</a>
+    </div>
+    <div class="card-body">
+      <div id="compliance-alerts"><p class="muted">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:1.5rem" class="card">
+  <div class="card-header"><h2>Coverage Gaps</h2></div>
+  <div class="card-body">
+    <div id="coverage-gaps"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG = {{ org.id }};
+const fmt = n => n.toLocaleString('en-GB');
+const £   = n => '£' + n.toLocaleString('en-GB', {minimumFractionDigits:0, maximumFractionDigits:0});
+
+async function load() {
+  const [summary, events, gaps, expiring] = await Promise.all([
+    fetch(`/api/reports/summary?org_id=${ORG}`).then(r=>r.json()),
+    fetch(`/api/events/?org_id=${ORG}&upcoming=1`).then(r=>r.json()),
+    fetch(`/api/scheduling/gaps?org_id=${ORG}`).then(r=>r.json()),
+    fetch(`/api/compliance/expiring?org_id=${ORG}&days=90`).then(r=>r.json()),
+  ]);
+
+  document.getElementById('stat-active').textContent    = fmt(summary.volunteers.active);
+  document.getElementById('stat-hours').textContent     = fmt(summary.hours.total) + 'h';
+  document.getElementById('stat-events').textContent    = fmt(summary.events.upcoming);
+  document.getElementById('stat-value').textContent     = £(summary.hours.estimated_value_gbp);
+  const alerts = summary.compliance_alerts.dbs_expiring_90_days + summary.compliance_alerts.training_expiring_90_days;
+  document.getElementById('stat-compliance').textContent = fmt(alerts);
+  if (alerts > 0) document.querySelector('.stat-tile.warn').classList.add('warn');
+
+  // Upcoming events list
+  const evEl = document.getElementById('upcoming-events');
+  if (!events.length) { evEl.innerHTML = '<p class="muted">No upcoming events.</p>'; }
+  else {
+    evEl.innerHTML = events.slice(0,5).map(e => {
+      const d = new Date(e.start_datetime).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      const fill = e.total_volunteers_needed > 0
+        ? `<span class="badge ${e.total_volunteers_assigned >= e.total_volunteers_needed ? 'badge-green' : 'badge-yellow'}">${e.total_volunteers_assigned}/${e.total_volunteers_needed}</span>`
+        : '';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #e2e8f0">
+        <div><a href="/org/${ORG}/events/${e.id}">${e.name}</a><br><span class="muted">${d}${e.location ? ' · '+e.location : ''}</span></div>
+        <div>${fill}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Compliance alerts
+  const caEl = document.getElementById('compliance-alerts');
+  const allAlerts = [
+    ...expiring.dbs.map(c => ({type:'DBS', name: c.volunteer_name, expiry: c.expiry_date, days: c.days_until_expiry})),
+    ...expiring.training.map(t => ({type:'Training', name: t.volunteer_name, expiry: t.expiry_date, days: t.days_until_expiry})),
+  ].sort((a,b) => a.days - b.days);
+  if (!allAlerts.length) { caEl.innerHTML = '<p class="muted" style="color:#16a34a">✓ No compliance items expiring in 90 days.</p>'; }
+  else {
+    caEl.innerHTML = allAlerts.slice(0,8).map(a => {
+      const cls = a.days <= 30 ? 'badge-red' : 'badge-yellow';
+      return `<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid #e2e8f0">
+        <div><strong>${a.name}</strong> – <span class="muted">${a.type}</span></div>
+        <span class="badge ${cls}">${a.days}d</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Coverage gaps
+  const cgEl = document.getElementById('coverage-gaps');
+  if (!gaps.length) { cgEl.innerHTML = '<p class="muted" style="color:#16a34a">✓ No unfilled volunteer slots.</p>'; }
+  else {
+    cgEl.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Event</th><th>Date</th><th>Role</th><th>Needed</th><th>Filled</th><th>Gap</th></tr></thead>
+      <tbody>${gaps.slice(0,10).map(g => {
+        const d = new Date(g.event_start).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+        return `<tr>
+          <td><a href="/org/${ORG}/events/${g.event_id}">${g.event_name}</a></td>
+          <td>${d}</td><td>${g.role?.name || '–'}</td>
+          <td>${g.slots_required}</td><td>${g.slots_filled}</td>
+          <td><span class="badge badge-red">${g.slots_available}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+load();
+</script>
+{% endblock %}

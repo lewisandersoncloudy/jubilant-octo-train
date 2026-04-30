@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}{{ volunteer.full_name }}{% endblock %}
+{% block topbar_title %}{{ volunteer.full_name }}{% endblock %}
+{% block topbar_actions %}
+  <a class="btn btn-outline btn-sm" href="{{ url_for('ui.volunteers', org_id=org.id) }}">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h2>Profile</h2>
+      <span class="badge {% if volunteer.status == 'active' %}badge-green{% elif volunteer.status == 'on_hold' %}badge-yellow{% else %}badge-gray{% endif %}">{{ volunteer.status|replace('_',' ')|title }}</span>
+    </div>
+    <div class="card-body" id="profile-view">
+      <table style="width:100%;font-size:.9rem">
+        <tr><td class="muted" style="width:120px;padding:.4rem 0">Email</td><td>{{ volunteer.email }}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Phone</td><td>{{ volunteer.phone or '–' }}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Joined</td><td>{{ volunteer.joined_date.strftime('%d %b %Y') if volunteer.joined_date else '–' }}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Interests</td><td>{{ volunteer.interests or '–' }}</td></tr>
+        <tr><td class="muted" style="padding:.4rem 0">Total Hours</td><td><strong>{{ "%.1f"|format(volunteer.total_hours) }}h</strong></td></tr>
+      </table>
+      <div style="margin-top:1rem">
+        <div class="muted" style="font-size:.8rem;margin-bottom:.5rem">Skills</div>
+        {% for vs in volunteer.skills %}
+          <span class="badge badge-blue" style="margin-right:.25rem;margin-bottom:.25rem">{{ vs.skill.name }}</span>
+        {% else %}<span class="muted">None recorded</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h2>Compliance</h2></div>
+    <div class="card-body">
+      <div class="muted" style="font-size:.85rem;margin-bottom:.5rem">DBS Checks</div>
+      <div id="dbs-list"><p class="muted">Loading…</p></div>
+      <div class="muted" style="font-size:.85rem;margin:.75rem 0 .5rem">Training</div>
+      <div id="training-list"><p class="muted">Loading…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h2>Availability</h2>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('avail-modal').style.display='flex'">+ Add</button>
+  </div>
+  <div class="card-body" id="availability-panel"><p class="muted">Loading…</p></div>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h2>Hours Log</h2>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('hours-modal').style.display='flex'">+ Log Hours</button>
+  </div>
+  <div class="card-body" id="hours-panel"><p class="muted">Loading…</p></div>
+</div>
+
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header"><h2>Internal Notes</h2></div>
+  <div class="card-body">
+    <textarea id="notes-field" rows="4" style="width:100%;padding:.5rem;border:1px solid #e2e8f0;border-radius:4px;font-size:.9rem">{{ volunteer.notes or '' }}</textarea>
+    <button class="btn btn-primary btn-sm" style="margin-top:.5rem" onclick="saveNotes()">Save Notes</button>
+  </div>
+</div>
+
+<!-- Add Availability Modal -->
+<div id="avail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:380px">
+    <h2 style="margin-bottom:1rem">Add Availability</h2>
+    <form id="avail-form">
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.85rem;font-weight:500">Day</label><br>
+        <select name="day_of_week" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem">
+          <option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option>
+          <option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+        <div><label style="font-size:.85rem;font-weight:500">From</label><br><input name="start_time" type="time" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem" value="09:00"></div>
+        <div><label style="font-size:.85rem;font-weight:500">To</label><br><input name="end_time" type="time" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem" value="17:00"></div>
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('avail-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Log Hours Modal -->
+<div id="hours-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:380px">
+    <h2 style="margin-bottom:1rem">Log Hours</h2>
+    <form id="hours-form">
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Date *</label><br><input name="date" type="date" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Hours *</label><br><input name="hours" type="number" step="0.5" min="0.5" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Miles Travelled</label><br><input name="miles_travelled" type="number" step="0.1" min="0" value="0" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Description</label><br><input name="description" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('hours-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const VID = {{ volunteer.id }};
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+async function loadAll() {
+  const [dbs, training, avail, hours] = await Promise.all([
+    fetch(`/api/compliance/dbs/${VID}`).then(r=>r.json()),
+    fetch(`/api/compliance/training/${VID}`).then(r=>r.json()),
+    fetch(`/api/volunteers/${VID}/availability`).then(r=>r.json()),
+    fetch(`/api/volunteers/${VID}/hours`).then(r=>r.json()),
+  ]);
+
+  // DBS
+  const dbsEl = document.getElementById('dbs-list');
+  dbsEl.innerHTML = dbs.length ? dbs.map(c => {
+    const cls = c.is_expired ? 'badge-red' : (c.days_until_expiry < 90 ? 'badge-yellow' : 'badge-green');
+    const exp = c.expiry_date ? `Expires ${c.expiry_date}` : 'No expiry';
+    return `<div style="display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid #e2e8f0">
+      <span>${c.check_type.toUpperCase()} – ${c.issue_date}</span>
+      <span class="badge ${cls}">${c.is_expired ? 'Expired' : exp}</span>
+    </div>`;
+  }).join('') : '<p class="muted">No DBS records.</p>';
+
+  // Training
+  const trEl = document.getElementById('training-list');
+  trEl.innerHTML = training.length ? training.map(t => {
+    const cls = t.is_expired ? 'badge-red' : (t.days_until_expiry < 90 ? 'badge-yellow' : 'badge-green');
+    return `<div style="display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid #e2e8f0">
+      <span>${t.requirement?.name || '–'}</span>
+      <span class="badge ${cls}">${t.is_expired ? 'Expired' : (t.expiry_date || 'Valid')}</span>
+    </div>`;
+  }).join('') : '<p class="muted">No training records.</p>';
+
+  // Availability
+  const avEl = document.getElementById('availability-panel');
+  avEl.innerHTML = avail.length ? avail.map(s =>
+    `<div style="display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid #e2e8f0">
+      <span>${DAYS[s.day_of_week] || s.date}</span>
+      <span class="muted">${s.start_time || ''} – ${s.end_time || ''}</span>
+    </div>`
+  ).join('') : '<p class="muted">No availability set.</p>';
+
+  // Hours
+  const hoursEl = document.getElementById('hours-panel');
+  if (!hours.logs.length) { hoursEl.innerHTML = '<p class="muted">No hours logged.</p>'; return; }
+  hoursEl.innerHTML = `<p style="margin-bottom:.75rem"><strong>Total: ${hours.total_hours.toFixed(1)}h</strong></p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Hours</th><th>Miles</th><th>Description</th></tr></thead>
+      <tbody>${hours.logs.map(h =>
+        `<tr><td>${h.date}</td><td>${h.hours}</td><td>${h.miles_travelled}</td><td>${h.description||'–'}</td></tr>`
+      ).join('')}</tbody>
+    </table></div>`;
+}
+
+document.getElementById('avail-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  body.day_of_week = parseInt(body.day_of_week);
+  await fetch(`/api/volunteers/${VID}/availability`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  document.getElementById('avail-modal').style.display = 'none';
+  loadAll();
+});
+
+document.getElementById('hours-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  await fetch(`/api/volunteers/${VID}/hours`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  document.getElementById('hours-modal').style.display = 'none';
+  loadAll();
+});
+
+async function saveNotes() {
+  const notes = document.getElementById('notes-field').value;
+  await fetch(`/api/volunteers/${VID}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({notes})});
+}
+
+loadAll();
+</script>
+{% endblock %}

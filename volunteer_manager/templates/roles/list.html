@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block topbar_title %}Volunteer Roles{% endblock %}
+{% block topbar_actions %}
+  <button class="btn btn-primary btn-sm" onclick="document.getElementById('add-modal').style.display='flex'">+ New Role</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Role</th><th>Capacity</th><th>DBS Required</th><th>Required Skills</th><th></th></tr></thead>
+      <tbody>
+        {% for r in roles %}
+        <tr>
+          <td><strong>{{ r.name }}</strong>{% if r.description %}<br><span class="muted">{{ r.description[:80] }}{% if r.description|length > 80 %}…{% endif %}</span>{% endif %}</td>
+          <td>{{ r.capacity or 'Unlimited' }}</td>
+          <td>{% if r.requires_dbs %}<span class="badge badge-yellow">{{ r.dbs_level|upper if r.dbs_level else 'Yes' }}</span>{% else %}<span class="muted">No</span>{% endif %}</td>
+          <td>{% for s in r.required_skills %}<span class="badge badge-blue" style="margin-right:.2rem">{{ s.name }}</span>{% else %}<span class="muted">–</span>{% endfor %}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="deactivateRole({{ r.id }})">Deactivate</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted" style="text-align:center;padding:2rem">No roles defined yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:2rem;width:480px">
+    <h2 style="margin-bottom:1.5rem">New Role</h2>
+    <form id="add-form">
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Role Name *</label><br><input name="name" required style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Description</label><br><textarea name="description" rows="2" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></textarea></div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.85rem;font-weight:500">Capacity (leave blank for unlimited)</label><br><input name="capacity" type="number" min="1" style="width:100%;padding:.4rem;border:1px solid #e2e8f0;border-radius:4px;margin-top:.25rem"></div>
+      <div style="margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">
+        <input name="requires_dbs" type="checkbox" id="dbs-cb">
+        <label for="dbs-cb" style="font-size:.875rem">DBS check required</label>
+      </div>
+      <div style="display:flex;gap:.75rem;justify-content:flex-end">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('add-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Role</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORG = {{ org.id }};
+document.getElementById('add-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    organisation_id: ORG,
+    name: fd.get('name'),
+    description: fd.get('description'),
+    capacity: fd.get('capacity') ? parseInt(fd.get('capacity')) : null,
+    requires_dbs: fd.get('requires_dbs') === 'on',
+  };
+  const r = await fetch('/api/roles/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (r.ok) window.location.reload();
+  else { const err = await r.json(); alert(err.description || 'Error'); }
+});
+
+async function deactivateRole(id) {
+  if (!confirm('Deactivate this role?')) return;
+  await fetch(`/api/roles/${id}`, {method:'DELETE'});
+  window.location.reload();
+}
+</script>
+{% endblock %}
