@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-5">
+    <h2 class="cf-page-title mb-3">Add User</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label" for="name">Full name</label>
+            <input type="text" id="name" name="name" class="form-control"
+                   value="{{ request.form.get('name', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="email">Email address</label>
+            <input type="email" id="email" name="email" class="form-control"
+                   value="{{ request.form.get('email', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="role">Role</label>
+            <select id="role" name="role" class="form-select" onchange="toggleAuditorDate()">
+              <option value="councillor" {% if request.form.get('role','councillor')=='councillor' %}selected{% endif %}>Councillor (read-only)</option>
+              <option value="clerk" {% if request.form.get('role')=='clerk' %}selected{% endif %}>Clerk / RFO (full edit)</option>
+              <option value="auditor" {% if request.form.get('role')=='auditor' %}selected{% endif %}>Auditor (time-limited read-only)</option>
+            </select>
+          </div>
+          <div class="mb-3" id="auditorDateRow" style="display:none;">
+            <label class="form-label" for="auditor_access_until">Auditor access expires on</label>
+            <input type="date" id="auditor_access_until" name="auditor_access_until"
+                   class="form-control" value="{{ request.form.get('auditor_access_until', '') }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="password">Initial password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   minlength="8" required>
+            <div class="form-text">Minimum 8 characters. Ask the user to change this after first login.</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Create User</button>
+            <a href="{{ url_for('auth.users') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleAuditorDate() {
+  const role = document.getElementById('role').value;
+  document.getElementById('auditorDateRow').style.display = role === 'auditor' ? '' : 'none';
+}
+toggleAuditorDate();
+</script>
+{% endblock %}

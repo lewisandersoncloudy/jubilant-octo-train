@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Budget Monitor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Budget Monitor — {{ fy.label }}</h2>
+  <div class="d-flex gap-2">
+    {% if current_user.can_edit %}
+      {% if not fy.budget_locked %}
+        <a href="{{ url_for('budget.setup') }}" class="btn btn-outline-primary">Set Budget</a>
+        <form method="post" action="{{ url_for('budget.approve') }}"
+              onsubmit="return confirm('Lock and approve the budget? This cannot be undone.')">
+          <button type="submit" class="btn btn-success">Approve &amp; Lock Budget</button>
+        </form>
+      {% else %}
+        <span class="badge bg-success p-2">Budget Approved &#10003;</span>
+      {% endif %}
+    {% endif %}
+    <a href="{{ url_for('reports.budget_csv') }}" class="btn btn-outline-secondary">Export CSV</a>
+  </div>
+</div>
+
+{% if fy.budget_locked %}
+<div class="alert alert-info py-2">
+  Budget approved on {{ fy.budget_approved_at.strftime('%d/%m/%Y') }} by {{ fy.budget_approved_by.name }}.
+  Mid-year adjustments require a note and are recorded in the audit log.
+</div>
+{% else %}
+<div class="alert alert-warning py-2">
+  Budget has not been approved yet. Enter amounts on the <a href="{{ url_for('budget.setup') }}">Set Budget</a> page, then approve.
+</div>
+{% endif %}
+
+{# RAG Key #}
+<div class="d-flex gap-3 mb-3 align-items-center">
+  <small class="text-muted">RAG status:</small>
+  <span class="cf-rag cf-rag-green">&#9632; On track (&lt;75%)</span>
+  <span class="cf-rag cf-rag-amber">&#9632; Attention (75–95%)</span>
+  <span class="cf-rag cf-rag-red">&#9632; Over / near limit (&ge;95%)</span>
+</div>
+
+{# Receipts #}
+<h5 class="mt-3">Receipts</h5>
+<div class="card mb-4">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Heading</th>
+          <th class="text-end">Budget (£)</th>
+          <th class="text-end">Received (£)</th>
+          <th class="text-end">Remaining (£)</th>
+          <th style="width:160px">Progress</th>
+          <th class="text-end">RAG</th>
+          {% if current_user.can_edit and fy.budget_locked %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% set receipts_rows = rows | selectattr('heading.category', 'equalto', 'receipts') | list %}
+        {% for row in receipts_rows %}
+        <tr>
+          <td>{{ row.heading.name }}</td>
+          <td class="text-end">{{ '%.2f' | format(row.budget) }}</td>
+          <td class="text-end">{{ '%.2f' | format(row.spent) }}</td>
+          <td class="text-end {% if row.remaining < 0 %}text-danger{% endif %}">{{ '%.2f' | format(row.remaining) }}</td>
+          <td>
+            {% if row.budget > 0 %}
+            <div class="progress" style="height:12px;">
+              {% set pct = [[(row.spent / row.budget * 100)|round(0)|int, 0]|max, 100]|min %}
+              <div class="progress-bar cf-prog-{{ row.rag }}" style="width:{{ pct }}%"></div>
+            </div>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if row.rag != 'grey' %}
+            <span class="cf-rag cf-rag-{{ row.rag }}">&#9632;</span>
+            {% else %}—{% endif %}
+          </td>
+          {% if current_user.can_edit and fy.budget_locked %}
+          <td>
+            {% if row.budget_obj %}
+            <a href="{{ url_for('budget.adjust', budget_id=row.budget_obj.id) }}" class="btn btn-sm btn-outline-secondary">Adjust</a>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+        <tr class="table-light fw-bold">
+          <td>Total Receipts</td>
+          <td class="text-end">{{ '%.2f' | format(total_budget_receipts) }}</td>
+          <td class="text-end">{{ '%.2f' | format(total_spent_receipts) }}</td>
+          <td class="text-end">{{ '%.2f' | format(total_budget_receipts - total_spent_receipts) }}</td>
+          <td colspan="{% if current_user.can_edit and fy.budget_locked %}3{% else %}2{% endif %}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Payments #}
+<h5>Payments</h5>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Heading</th>
+          <th class="text-end">Budget (£)</th>
+          <th class="text-end">Spent (£)</th>
+          <th class="text-end">Remaining (£)</th>
+          <th style="width:160px">Progress</th>
+          <th class="text-end">RAG</th>
+          {% if current_user.can_edit and fy.budget_locked %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% set payment_rows = rows | selectattr('heading.category', 'equalto', 'payments') | list %}
+        {% for row in payment_rows %}
+        <tr>
+          <td>{{ row.heading.name }}</td>
+          <td class="text-end">{{ '%.2f' | format(row.budget) }}</td>
+          <td class="text-end">{{ '%.2f' | format(row.spent) }}</td>
+          <td class="text-end {% if row.remaining < 0 %}text-danger fw-bold{% endif %}">{{ '%.2f' | format(row.remaining) }}</td>
+          <td>
+            {% if row.budget > 0 %}
+            <div class="progress" style="height:12px;">
+              {% set pct = [[(row.spent / row.budget * 100)|round(0)|int, 0]|max, 100]|min %}
+              <div class="progress-bar cf-prog-{{ row.rag }}" style="width:{{ pct }}%"></div>
+            </div>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if row.rag != 'grey' %}
+            <span class="cf-rag cf-rag-{{ row.rag }}">&#9632;</span>
+            {% else %}—{% endif %}
+          </td>
+          {% if current_user.can_edit and fy.budget_locked %}
+          <td>
+            {% if row.budget_obj %}
+            <a href="{{ url_for('budget.adjust', budget_id=row.budget_obj.id) }}" class="btn btn-sm btn-outline-secondary">Adjust</a>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+        <tr class="table-light fw-bold">
+          <td>Total Payments</td>
+          <td class="text-end">{{ '%.2f' | format(total_budget_payments) }}</td>
+          <td class="text-end">{{ '%.2f' | format(total_spent_payments) }}</td>
+          <td class="text-end">{{ '%.2f' | format(total_budget_payments - total_spent_payments) }}</td>
+          <td colspan="{% if current_user.can_edit and fy.budget_locked %}3{% else %}2{% endif %}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

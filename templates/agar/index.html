@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}AGAR Helper{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">AGAR Helper — {{ fy.label }}</h2>
+</div>
+
+<div class="alert alert-warning">
+  <strong>This is a helper only.</strong> It maps your cashbook figures to AGAR Section 2 boxes and flags
+  potential inconsistencies. You must complete and submit the AGAR form separately using your
+  external auditor's process. This system does not generate or submit the AGAR.
+</div>
+
+{% for check in checks %}
+<div class="alert alert-{{ check.level }}">{{ check.message }}</div>
+{% endfor %}
+
+<div class="card mb-4">
+  <div class="card-header cf-card-header">AGAR Section 2 — Figures from your cashbook</div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th style="width:80px">Box</th>
+          <th>Description</th>
+          <th class="text-end" style="width:160px">This year (£)</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fw-bold">Box 1</td>
+          <td>Balances brought forward</td>
+          <td class="text-end fw-semibold">{{ '%.2f' | format(box1) }}</td>
+          <td class="text-muted small">Opening balance from first reconciliation</td>
+        </tr>
+        <tr>
+          <td class="fw-bold">Box 2</td>
+          <td>Annual precept</td>
+          <td class="text-end fw-semibold">{{ '%.2f' | format(box2) }}</td>
+          <td class="text-muted small">Sum of all Precept receipts</td>
+        </tr>
+        <tr>
+          <td class="fw-bold">Box 3</td>
+          <td>Total other receipts</td>
+          <td class="text-end fw-semibold">{{ '%.2f' | format(box3) }}</td>
+          <td class="text-muted small">All receipts excluding precept</td>
+        </tr>
+        <tr>
+          <td class="fw-bold">Box 4</td>
+          <td>Staff costs</td>
+          <td class="text-end fw-semibold">{{ '%.2f' | format(box4) }}</td>
+          <td class="text-muted small">Clerk Salary heading</td>
+        </tr>
+        <tr>
+          <td class="fw-bold">Box 5</td>
+          <td>Loan repayments (principal and interest)</td>
+          <td class="text-end fw-semibold">{{ '%.2f' | format(box5) }}</td>
+          <td class="text-muted small">Not modelled — enter manually on AGAR if applicable</td>
+        </tr>
+        <tr>
+          <td class="fw-bold">Box 6</td>
+          <td>All other payments</td>
+          <td class="text-end fw-semibold">{{ '%.2f' | format(box6) }}</td>
+          <td class="text-muted small">All payments excluding staff costs and loan repayments</td>
+        </tr>
+        <tr class="table-light">
+          <td class="fw-bold">Box 7</td>
+          <td><strong>Balances carried forward</strong></td>
+          <td class="text-end fw-bold">{{ '%.2f' | format(box7) }}</td>
+          <td class="text-muted small">Box 1 + 2 + 3 − 4 − 5 − 6</td>
+        </tr>
+        <tr class="{% if (box7 - box8)|abs < 0.01 %}table-success{% else %}table-warning{% endif %}">
+          <td class="fw-bold">Box 8</td>
+          <td><strong>Total cash and short-term investments</strong></td>
+          <td class="text-end fw-bold">{{ '%.2f' | format(box8) }}</td>
+          <td class="text-muted small">Closing balance from latest signed-off reconciliation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header cf-card-header">Consistency check: Box 7 vs Box 8</div>
+      <div class="card-body">
+        {% if (box7 - box8)|abs < 0.01 %}
+        <div class="text-success fw-semibold">&#10003; Box 7 equals Box 8 — figures are consistent.</div>
+        {% else %}
+        <div class="text-danger fw-semibold">
+          &#9888; Box 7 (£{{ '%.2f' | format(box7) }}) does not equal Box 8 (£{{ '%.2f' | format(box8) }}).
+          Difference: £{{ '%.2f' | format(box8 - box7) }}.
+        </div>
+        <p class="text-muted small mt-2">
+          Common causes: not all months reconciled, outstanding items not updated,
+          or transactions entered after the last reconciliation.
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header cf-card-header">Reserves summary</div>
+      <div class="card-body">
+        <p>Total reserves (all categories): <strong>£{{ '%.2f' | format(total_reserves) }}</strong></p>
+        <p class="text-muted small mb-0">
+          Reserves should be a subset of your cash balance (Box 8).
+          If total reserves exceed Box 8, review your reserve transfers.
+        </p>
+        <a href="{{ url_for('reserves.index') }}" class="btn btn-sm btn-outline-secondary mt-2">View Reserves</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

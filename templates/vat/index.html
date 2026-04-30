@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}VAT Summary (VAT126){% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">VAT Summary (VAT126) — {{ fy.label }}</h2>
+  <a href="{{ url_for('reports.vat_csv') }}" class="btn btn-outline-secondary">Export CSV</a>
+</div>
+
+<div class="alert alert-info">
+  This summary supports preparation of your VAT126 claim to HMRC.
+  <strong>This system does not submit claims directly.</strong> Use these figures to complete your VAT126 form.
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card cf-stat-neutral">
+      <div class="card-body">
+        <div class="cf-stat-label">VAT on receipts</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(receipts_vat) }}</div>
+        <div class="cf-stat-sub">VAT you collected</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card cf-stat-neutral">
+      <div class="card-body">
+        <div class="cf-stat-label">VAT on payments</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(payments_vat_total) }}</div>
+        <div class="cf-stat-sub">VAT you paid out</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card cf-stat-neutral">
+      <div class="card-body">
+        <div class="cf-stat-label">Reclaimable VAT</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(payments_vat_reclaimable) }}</div>
+        <div class="cf-stat-sub">Flagged as reclaimable</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card {% if net_reclaimable > 0 %}cf-stat-positive{% else %}cf-stat-neutral{% endif %}">
+      <div class="card-body">
+        <div class="cf-stat-label">Net reclaimable</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(net_reclaimable) }}</div>
+        <div class="cf-stat-sub">Reclaimable − VAT on receipts</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if vat_txns %}
+<div class="card">
+  <div class="card-header cf-card-header">Transactions with VAT</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Ref</th>
+            <th>Type</th>
+            <th>Payee / Payer</th>
+            <th>Description</th>
+            <th class="text-end">Net (£)</th>
+            <th class="text-end">VAT (£)</th>
+            <th>Reclaimable</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in vat_txns %}
+          <tr>
+            <td class="text-nowrap">{{ t.date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ t.reference }}</td>
+            <td>
+              <span class="badge {% if t.transaction_type == 'receipt' %}cf-badge-receipt{% else %}cf-badge-payment{% endif %}">
+                {{ t.type_label }}
+              </span>
+            </td>
+            <td>{{ t.payee_payer }}</td>
+            <td>{{ t.description }}</td>
+            <td class="text-end">{{ '%.2f' | format(t.net_amount) }}</td>
+            <td class="text-end fw-semibold">{{ '%.2f' | format(t.vat_amount) }}</td>
+            <td>
+              {% if t.vat_reclaimable %}
+              <span class="badge cf-badge-ok">Yes</span>
+              {% else %}
+              <span class="text-muted">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="6" class="text-end">Totals:</td>
+            <td class="text-end">{{ '%.2f' | format(receipts_vat + payments_vat_total) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-secondary">No VAT transactions recorded this year.</div>
+{% endif %}
+{% endblock %}

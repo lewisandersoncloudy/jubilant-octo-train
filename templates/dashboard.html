@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h2 class="cf-page-title">Dashboard
+      {% if fy %}<small class="text-muted fs-5">{{ fy.label }}</small>{% endif %}
+    </h2>
+  </div>
+  {% if current_user.can_edit and fy %}
+  <div class="col-auto">
+    <a href="{{ url_for('cashbook.add') }}" class="btn btn-primary">+ Add Transaction</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if not fy %}
+<div class="alert alert-warning">
+  No current financial year is configured.
+  {% if current_user.can_edit %}
+  <a href="{{ url_for('financial_years.new') }}">Create one now</a>.
+  {% endif %}
+</div>
+{% else %}
+
+{# Summary cards #}
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card cf-stat-receipts">
+      <div class="card-body">
+        <div class="cf-stat-label">Total Receipts</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(stats.total_receipts) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card cf-stat-payments">
+      <div class="card-body">
+        <div class="cf-stat-label">Total Payments</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(stats.total_payments) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card {% if stats.net_movement >= 0 %}cf-stat-positive{% else %}cf-stat-negative{% endif %}">
+      <div class="card-body">
+        <div class="cf-stat-label">Net Movement</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(stats.net_movement) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <div class="card cf-stat-card cf-stat-neutral">
+      <div class="card-body">
+        <div class="cf-stat-label">Transactions</div>
+        <div class="cf-stat-value">{{ stats.transaction_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Monthly workflow checklist #}
+<div class="card mb-4">
+  <div class="card-header cf-card-header">
+    Monthly Workflow
+  </div>
+  <div class="card-body p-0">
+    {% if month_status %}
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Transactions Entered</th>
+          <th>Bank Reconciliation</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ms in month_status %}
+        <tr>
+          <td class="fw-semibold">{{ ms.label }}</td>
+          <td>
+            {% if ms.txn_count > 0 %}
+              <span class="badge cf-badge-ok">{{ ms.txn_count }} transaction{% if ms.txn_count != 1 %}s{% endif %}</span>
+            {% else %}
+              <span class="badge cf-badge-none">None entered</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if ms.reconciled %}
+              <span class="badge cf-badge-ok">&#10003; Signed off</span>
+            {% elif ms.recon_id %}
+              <span class="badge cf-badge-warn">In progress</span>
+            {% else %}
+              <span class="badge cf-badge-none">Not started</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if ms.reconciled and ms.recon_id %}
+              <a href="{{ url_for('reconciliation.view', recon_id=ms.recon_id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+            {% elif ms.recon_id %}
+              <a href="{{ url_for('reconciliation.view', recon_id=ms.recon_id) }}" class="btn btn-sm btn-outline-primary">Continue</a>
+            {% elif current_user.can_edit %}
+              <a href="{{ url_for('reconciliation.new') }}" class="btn btn-sm btn-outline-primary">Reconcile</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="p-3 text-muted mb-0">No transactions recorded yet this year.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# Quick links #}
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Quick Links</div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          {% if current_user.can_edit %}
+          <a href="{{ url_for('cashbook.add') }}" class="btn btn-outline-primary">Add Transaction</a>
+          <a href="{{ url_for('reconciliation.new') }}" class="btn btn-outline-secondary">New Reconciliation</a>
+          {% endif %}
+          <a href="{{ url_for('cashbook.index') }}" class="btn btn-outline-secondary">View Cashbook</a>
+          <a href="{{ url_for('budget.index') }}" class="btn btn-outline-secondary">Budget Monitor</a>
+          <a href="{{ url_for('reports.receipts_and_payments') }}" class="btn btn-outline-secondary">Receipts &amp; Payments Report</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Year-End Readiness</div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% set all_reconciled = month_status | selectattr('reconciled', 'equalto', false) | list | length == 0 and month_status | length > 0 %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            All months reconciled
+            {% if all_reconciled %}<span class="badge cf-badge-ok">&#10003;</span>
+            {% else %}<span class="badge cf-badge-none">Pending</span>{% endif %}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            Budget set and approved
+            {% if fy.budget_locked %}<span class="badge cf-badge-ok">&#10003;</span>
+            {% else %}<span class="badge cf-badge-none">Pending</span>{% endif %}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            Transactions entered
+            {% if stats.transaction_count > 0 %}<span class="badge cf-badge-ok">&#10003;</span>
+            {% else %}<span class="badge cf-badge-none">None yet</span>{% endif %}
+          </li>
+          <li class="list-group-item">
+            <a href="{{ url_for('agar.index') }}" class="text-decoration-none">
+              Check AGAR figures &rarr;
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

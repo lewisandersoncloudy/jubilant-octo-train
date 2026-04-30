@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Receipts &amp; Payments Account — {{ fy.label }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12pt; margin: 2cm; color: #111; }
+    h1 { font-size: 16pt; border-bottom: 2px solid #1a3a5c; padding-bottom: 6px; }
+    h2 { font-size: 13pt; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #1a3a5c; color: white; padding: 6px 8px; text-align: left; }
+    th.num { text-align: right; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
+    td.num { text-align: right; }
+    tr.total td { border-top: 2px solid #1a3a5c; font-weight: bold; background: #f5f7fa; }
+    tr.grand-total td { border-top: 3px double #1a3a5c; font-weight: bold; font-size: 13pt; background: #eaf0f8; }
+    .footer { margin-top: 30px; font-size: 10pt; color: #666; border-top: 1px solid #ccc; padding-top: 8px; }
+    @media print { body { margin: 1.5cm; } }
+  </style>
+</head>
+<body>
+<h1>Receipts &amp; Payments Account<br>
+<small>Financial Year {{ fy.label }} ({{ fy.start_date.strftime('%d/%m/%Y') }} to {{ fy.end_date.strftime('%d/%m/%Y') }})</small></h1>
+
+<h2>Receipts</h2>
+<table>
+  <thead><tr><th>Heading</th><th class="num">Amount (£)</th></tr></thead>
+  <tbody>
+    {% for row in rows if row.heading.category == 'receipts' %}
+    <tr>
+      <td>{{ row.heading.name }}</td>
+      <td class="num">{{ '%.2f' | format(row.total) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total">
+      <td>Total Receipts</td>
+      <td class="num">{{ '%.2f' | format(total_receipts) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Payments</h2>
+<table>
+  <thead><tr><th>Heading</th><th class="num">Amount (£)</th></tr></thead>
+  <tbody>
+    {% for row in rows if row.heading.category == 'payments' %}
+    <tr>
+      <td>{{ row.heading.name }}</td>
+      <td class="num">{{ '%.2f' | format(row.total) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total">
+      <td>Total Payments</td>
+      <td class="num">{{ '%.2f' | format(total_payments) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<table style="margin-top:16px;">
+  <tbody>
+    <tr class="grand-total">
+      <td>Net movement (Receipts less Payments)</td>
+      <td class="num">{{ '%.2f' | format(net) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  Generated {{ generated.strftime('%d/%m/%Y at %H:%M') }} &bull;
+  Council Finance — Receipts &amp; Payments system &bull;
+  This is an unaudited management account.
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-sm-8 col-md-5 col-lg-4">
+    <div class="text-center mb-4">
+      <h1 class="h3 fw-bold cf-brand-title">&#9632; Council Finance</h1>
+      <p class="text-muted">Receipts &amp; Payments for parish &amp; town councils</p>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="h5 mb-4">Log In</h2>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label" for="email">Email address</label>
+            <input type="email" id="email" name="email" class="form-control" required autofocus>
+          </div>
+          <div class="mb-4">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Log In</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <p class="text-center text-muted mt-3" style="font-size:0.8rem;">
+      For help, contact your Clerk or RFO.
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}Add Transaction{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <h2 class="cf-page-title mb-3">Add Transaction — {{ fy.label }}</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post" id="txnForm">
+
+          {# Type selector — prominent #}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Transaction type <span class="text-danger">*</span></label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="transaction_type" id="typeReceipt"
+                       value="receipt" {% if form.get('transaction_type', '') == 'receipt' %}checked{% endif %}
+                       onchange="updateHeadings()" required>
+                <label class="form-check-label cf-type-receipt" for="typeReceipt">
+                  <strong>Receipt</strong> — money received by the council
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="transaction_type" id="typePayment"
+                       value="payment" {% if form.get('transaction_type', '') == 'payment' %}checked{% endif %}
+                       onchange="updateHeadings()">
+                <label class="form-check-label cf-type-payment" for="typePayment">
+                  <strong>Payment</strong> — money paid out by the council
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
+              <input type="date" id="date" name="date" class="form-control"
+                     value="{{ form.get('date', '') }}" required>
+              <div class="form-text">Must be within {{ fy.label }} ({{ fy.start_date.strftime('%d/%m/%Y') }} – {{ fy.end_date.strftime('%d/%m/%Y') }})</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="reference">Reference <span class="text-danger">*</span></label>
+              <input type="text" id="reference" name="reference" class="form-control"
+                     value="{{ form.get('reference', '') }}" placeholder="e.g. CHQ-001 or BACS-042" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-6">
+              <label class="form-label" for="payee_payer">Payee / Payer <span class="text-danger">*</span></label>
+              <input type="text" id="payee_payer" name="payee_payer" class="form-control"
+                     value="{{ form.get('payee_payer', '') }}" required>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="budget_heading_id">Budget heading <span class="text-danger">*</span></label>
+              <select id="budget_heading_id" name="budget_heading_id" class="form-select" required>
+                <option value="">— select after choosing type —</option>
+                {% for h in headings %}
+                <option value="{{ h.id }}" data-category="{{ h.category }}"
+                        {% if form.get('budget_heading_id', '') == h.id|string %}selected{% endif %}>
+                  {{ h.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label" for="description">Description <span class="text-danger">*</span></label>
+            <input type="text" id="description" name="description" class="form-control"
+                   value="{{ form.get('description', '') }}" required>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-4">
+              <label class="form-label" for="net_amount">Net amount (£) <span class="text-danger">*</span></label>
+              <input type="number" id="net_amount" name="net_amount" class="form-control"
+                     step="0.01" min="0.01" value="{{ form.get('net_amount', '') }}"
+                     required oninput="updateGross()">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="vat_amount">VAT amount (£)</label>
+              <input type="number" id="vat_amount" name="vat_amount" class="form-control"
+                     step="0.01" min="0" value="{{ form.get('vat_amount', '0.00') }}"
+                     oninput="updateGross()">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">Gross (£)</label>
+              <input type="text" id="gross_display" class="form-control cf-readonly-calc" readonly tabindex="-1">
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="vat_reclaimable" id="vatReclaimable"
+                     value="1" {% if form.get('vat_reclaimable') == '1' %}checked{% endif %}>
+              <label class="form-check-label" for="vatReclaimable">VAT is reclaimable (VAT126)</label>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label" for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" class="form-control" rows="2">{{ form.get('notes', '') }}</textarea>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save Transaction</button>
+            <a href="{{ url_for('cashbook.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const headings = {{ headings | map(attribute='id') | list | tojson }};
+const headingData = {
+  {% for h in headings %}
+  "{{ h.id }}": "{{ h.category }}",
+  {% endfor %}
+};
+
+function updateHeadings() {
+  const type = document.querySelector('input[name="transaction_type"]:checked');
+  const category = type ? type.value + 's' : null;
+  const sel = document.getElementById('budget_heading_id');
+  const current = sel.value;
+  Array.from(sel.options).forEach(opt => {
+    if (!opt.value) return;
+    opt.style.display = (category && opt.dataset.category !== category) ? 'none' : '';
+  });
+  // Reset if selected heading no longer valid
+  if (current && headingData[current] && category && headingData[current] !== category) {
+    sel.value = '';
+  }
+}
+
+function updateGross() {
+  const net = parseFloat(document.getElementById('net_amount').value) || 0;
+  const vat = parseFloat(document.getElementById('vat_amount').value) || 0;
+  document.getElementById('gross_display').value = (net + vat).toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateHeadings();
+  updateGross();
+});
+</script>
+{% endblock %}

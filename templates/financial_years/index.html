@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Financial Years{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Financial Years</h2>
+  <a href="{{ url_for('financial_years.new') }}" class="btn btn-primary">+ New Year</a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Current</th>
+          <th>Budget Approved</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fy in years %}
+        <tr class="{% if fy.is_current %}table-primary{% endif %}">
+          <td class="fw-semibold">{{ fy.label }}</td>
+          <td>{{ fy.start_date.strftime('%d/%m/%Y') }}</td>
+          <td>{{ fy.end_date.strftime('%d/%m/%Y') }}</td>
+          <td>{% if fy.is_current %}<span class="badge cf-badge-ok">Current</span>{% endif %}</td>
+          <td>
+            {% if fy.budget_locked %}
+              <span class="badge cf-badge-ok">Yes</span>
+            {% else %}
+              <span class="badge cf-badge-none">No</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if not fy.is_current %}
+            <form method="post" action="{{ url_for('financial_years.set_current', fy_id=fy.id) }}" class="d-inline">
+              <button type="submit" class="btn btn-sm btn-outline-primary"
+                      onclick="return confirm('Switch to {{ fy.label }} as the active year?')">
+                Set as Current
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Users</h2>
+  <a href="{{ url_for('auth.add_user') }}" class="btn btn-primary">+ Add User</a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Auditor Until</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr class="{% if not user.is_active %}table-secondary{% endif %}">
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="badge {% if user.role == 'clerk' %}bg-primary{% elif user.role == 'auditor' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ user.role_label }}
+            </span>
+          </td>
+          <td>
+            {% if user.is_active %}
+              <span class="badge cf-badge-ok">Active</span>
+            {% else %}
+              <span class="badge cf-badge-none">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user.role == 'auditor' and user.auditor_access_until %}
+              {{ user.auditor_access_until.strftime('%d/%m/%Y') }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-end">
+            {% if user.id != current_user.id %}
+              {% if user.is_active %}
+              <form method="post" action="{{ url_for('auth.deactivate_user', user_id=user.id) }}"
+                    class="d-inline" onsubmit="return confirm('Deactivate {{ user.name }}?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('auth.reactivate_user', user_id=user.id) }}"
+                    class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-success">Reactivate</button>
+              </form>
+              {% endif %}
+            {% else %}
+              <span class="text-muted" style="font-size:0.85rem;">(you)</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="alert alert-info mt-3">
+  <strong>Roles:</strong>
+  <strong>Clerk / RFO</strong> — full edit access &nbsp;|&nbsp;
+  <strong>Councillor</strong> — read-only &nbsp;|&nbsp;
+  <strong>Auditor</strong> — time-limited read-only
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Audit Log</h2>
+</div>
+
+<div class="alert alert-info py-2">
+  The audit log is <strong>immutable</strong> — records cannot be edited or deleted.
+  Every change to financial data is recorded here automatically.
+</div>
+
+{# Filters #}
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label mb-1 small">Record type</label>
+        <select name="entity_type" class="form-select form-select-sm">
+          <option value="">All</option>
+          {% for et in ['transaction','budget','budget_heading','reconciliation','reserve','reserve_transfer','financial_year','user'] %}
+          <option value="{{ et }}" {% if filter_entity == et %}selected{% endif %}>{{ et | replace('_', ' ') | title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-1 small">User</label>
+        <select name="user_id" class="form-select form-select-sm">
+          <option value="">All users</option>
+          {% for u in users %}
+          <option value="{{ u.id }}" {% if filter_user == u.id|string %}selected{% endif %}>{{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-secondary">Filter</button>
+        <a href="{{ url_for('audit.index') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if logs.items %}
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Who</th>
+            <th>Type</th>
+            <th>Action</th>
+            <th>Description</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs.items %}
+          <tr>
+            <td class="text-nowrap small text-muted">{{ log.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td class="text-nowrap small">{{ log.user.name }}</td>
+            <td><span class="badge bg-secondary small">{{ log.entity_type | replace('_', ' ') }}</span></td>
+            <td><span class="badge {% if log.action in ['void','deactivate'] %}bg-danger{% elif log.action in ['create','sign_off','approve'] %}bg-success{% else %}bg-secondary{% endif %} small">{{ log.action }}</span></td>
+            <td class="small">{{ log.description }}</td>
+            <td class="small text-muted">{{ log.reason or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Pagination #}
+    {% if logs.pages > 1 %}
+    <div class="p-2 d-flex justify-content-center">
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% if logs.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('audit.index', page=logs.prev_num, entity_type=filter_entity, user_id=filter_user) }}">Previous</a>
+          </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ logs.page }} of {{ logs.pages }}</span>
+          </li>
+          {% if logs.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('audit.index', page=logs.next_num, entity_type=filter_entity, user_id=filter_user) }}">Next</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="p-3 text-muted mb-0">No audit records found.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

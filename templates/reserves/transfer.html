@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Reserve Transfer{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="cf-page-title mb-1">{{ reserve.name }}</h2>
+    <p class="text-muted mb-3">Current balance: <strong>£{{ '%.2f' | format(reserve.balance) }}</strong></p>
+
+    <div class="card">
+      <div class="card-header cf-card-header">Record Transfer</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Direction <span class="text-danger">*</span></label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="direction" id="dirIn"
+                       value="in" {% if form.get('direction','in') == 'in' %}checked{% endif %} required>
+                <label class="form-check-label text-success" for="dirIn"><strong>In</strong> — add funds to reserve</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="direction" id="dirOut"
+                       value="out" {% if form.get('direction') == 'out' %}checked{% endif %}>
+                <label class="form-check-label text-danger" for="dirOut"><strong>Out</strong> — withdraw from reserve</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="date">Date <span class="text-danger">*</span></label>
+            <input type="date" id="date" name="date" class="form-control"
+                   value="{{ form.get('date', '') }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="amount">Amount (£) <span class="text-danger">*</span></label>
+            <input type="number" id="amount" name="amount" class="form-control"
+                   step="0.01" min="0.01" value="{{ form.get('amount', '') }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="reason">Reason <span class="text-danger">*</span></label>
+            <textarea id="reason" name="reason" class="form-control" rows="2" required>{{ form.get('reason', '') }}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="minute_reference">Minute reference</label>
+            <input type="text" id="minute_reference" name="minute_reference" class="form-control"
+                   value="{{ form.get('minute_reference', '') }}"
+                   placeholder="e.g. Min 32/26 — March 2026 meeting">
+            <div class="form-text">Reference to the council resolution authorising this transfer.</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Record Transfer</button>
+            <a href="{{ url_for('reserves.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

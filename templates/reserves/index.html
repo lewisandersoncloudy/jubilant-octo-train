@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Reserves{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Reserves</h2>
+  {% if current_user.can_edit %}
+  <a href="{{ url_for('reserves.add_reserve') }}" class="btn btn-primary">+ Add Reserve</a>
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-3">
+  {% for r in reserves %}
+  <div class="col-md-4">
+    <div class="card h-100 {% if r.is_general %}border-primary{% endif %}">
+      <div class="card-header d-flex justify-content-between align-items-center cf-card-header">
+        <span>{{ r.name }}</span>
+        {% if r.is_general %}<span class="badge bg-primary">General</span>{% else %}<span class="badge bg-secondary">Earmarked</span>{% endif %}
+      </div>
+      <div class="card-body">
+        {% if r.description %}<p class="text-muted small mb-2">{{ r.description }}</p>{% endif %}
+        <div class="cf-reserve-balance {% if r.balance < 0 %}text-danger{% endif %}">
+          £{{ '%.2f' | format(r.balance) }}
+        </div>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <a href="{{ url_for('reserves.view', reserve_id=r.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
+        {% if current_user.can_edit %}
+        <a href="{{ url_for('reserves.transfer', reserve_id=r.id) }}" class="btn btn-sm btn-outline-primary">Add / Withdraw</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-body d-flex justify-content-between align-items-center">
+    <strong>Total all reserves</strong>
+    <span class="fs-4 fw-bold {% if total < 0 %}text-danger{% endif %}">£{{ '%.2f' | format(total) }}</span>
+  </div>
+</div>
+
+<div class="alert alert-info mt-3">
+  Reserve balances should reconcile with the council's cash position.
+  Check the <a href="{{ url_for('agar.index') }}">AGAR Helper</a> for a cross-check.
+</div>
+{% endblock %}

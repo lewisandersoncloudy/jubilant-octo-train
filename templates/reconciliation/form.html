@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_new %}New Reconciliation{% else %}Edit Reconciliation{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <h2 class="cf-page-title mb-3">
+      {% if is_new %}New Reconciliation{% else %}Edit Reconciliation — {{ recon.label }}{% endif %}
+      <small class="text-muted fs-5">{{ fy.label }}</small>
+    </h2>
+
+    <div class="card">
+      <div class="card-body">
+        <form method="post" id="reconForm">
+
+          {% if is_new %}
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="month">Month <span class="text-danger">*</span></label>
+              <select id="month" name="month" class="form-select" required>
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if form.get('month', '')|string == m|string %}selected{% endif %}>
+                  {{ ['','January','February','March','April','May','June','July','August','September','October','November','December'][m] }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="year">Year <span class="text-danger">*</span></label>
+              <input type="number" id="year" name="year" class="form-control"
+                     value="{{ form.get('year', '') }}" min="2020" max="2099" required>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="opening_balance">
+                Opening balance (£) <span class="text-danger">*</span>
+              </label>
+              <input type="number" id="opening_balance" name="opening_balance" class="form-control"
+                     step="0.01" value="{{ form.opening_balance if not is_new else form.get('opening_balance','') }}"
+                     required oninput="calcDiff()">
+              <div class="form-text">Your bank balance at the start of the month.</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="closing_balance">
+                Closing balance (£) <span class="text-danger">*</span>
+              </label>
+              <input type="number" id="closing_balance" name="closing_balance" class="form-control"
+                     step="0.01" value="{{ form.closing_balance if not is_new else form.get('closing_balance','') }}"
+                     required oninput="calcDiff()">
+              <div class="form-text">Your bank statement closing balance.</div>
+            </div>
+          </div>
+
+          <div class="card cf-inner-card mb-3">
+            <div class="card-body">
+              <h6 class="mb-2">Outstanding items (not yet cleared at the bank)</h6>
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label class="form-label" for="outstanding_receipts">Outstanding receipts (£)</label>
+                  <input type="number" id="outstanding_receipts" name="outstanding_receipts" class="form-control"
+                         step="0.01" min="0"
+                         value="{{ form.outstanding_receipts if not is_new else form.get('outstanding_receipts','0') }}"
+                         oninput="calcDiff()">
+                  <div class="form-text">Money received but not yet shown on statement.</div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label" for="outstanding_payments">Outstanding payments (£)</label>
+                  <input type="number" id="outstanding_payments" name="outstanding_payments" class="form-control"
+                         step="0.01" min="0"
+                         value="{{ form.outstanding_payments if not is_new else form.get('outstanding_payments','0') }}"
+                         oninput="calcDiff()">
+                  <div class="form-text">Cheques issued but not yet cleared.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# Live difference calculator #}
+          <div class="cf-recon-calc mb-3" id="diffPanel">
+            <div class="row g-2 text-center">
+              <div class="col">
+                <div class="cf-calc-label">Opening balance</div>
+                <div class="cf-calc-value" id="calcOpening">£0.00</div>
+              </div>
+              <div class="col-auto cf-calc-op">+</div>
+              <div class="col">
+                <div class="cf-calc-label">Outstanding receipts</div>
+                <div class="cf-calc-value" id="calcOR">£0.00</div>
+              </div>
+              <div class="col-auto cf-calc-op">−</div>
+              <div class="col">
+                <div class="cf-calc-label">Outstanding payments</div>
+                <div class="cf-calc-value" id="calcOP">£0.00</div>
+              </div>
+              <div class="col-auto cf-calc-op">=</div>
+              <div class="col">
+                <div class="cf-calc-label">Adjusted balance</div>
+                <div class="cf-calc-value" id="calcAdj">£0.00</div>
+              </div>
+            </div>
+            <div class="text-center mt-2">
+              <span class="fw-semibold">Difference (should be £0.00):</span>
+              <span class="fw-bold ms-2" id="calcDiff">—</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="notes">Notes</label>
+            <textarea id="notes" name="notes" class="form-control" rows="2">{{ form.notes if not is_new else form.get('notes','') }}</textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{{ url_for('reconciliation.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fmtMoney(v) { return '£' + v.toFixed(2); }
+function calcDiff() {
+  const opening = parseFloat(document.getElementById('opening_balance').value) || 0;
+  const closing = parseFloat(document.getElementById('closing_balance').value) || 0;
+  const or_ = parseFloat(document.getElementById('outstanding_receipts').value) || 0;
+  const op = parseFloat(document.getElementById('outstanding_payments').value) || 0;
+  const adj = opening + or_ - op;
+  const diff = closing - adj;
+  document.getElementById('calcOpening').textContent = fmtMoney(opening);
+  document.getElementById('calcOR').textContent = fmtMoney(or_);
+  document.getElementById('calcOP').textContent = fmtMoney(op);
+  document.getElementById('calcAdj').textContent = fmtMoney(adj);
+  const diffEl = document.getElementById('calcDiff');
+  diffEl.textContent = fmtMoney(diff);
+  diffEl.className = 'fw-bold ms-2 ' + (Math.abs(diff) < 0.01 ? 'text-success' : 'text-danger');
+}
+document.addEventListener('DOMContentLoaded', calcDiff);
+</script>
+{% endblock %}

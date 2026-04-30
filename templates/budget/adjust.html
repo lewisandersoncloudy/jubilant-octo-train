@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Adjust Budget{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="cf-page-title mb-3">Budget Adjustment — {{ fy.label }}</h2>
+    <div class="card border-warning mb-3">
+      <div class="card-header bg-warning text-dark">{{ budget_obj.heading.name }}</div>
+      <div class="card-body">
+        <p><strong>Approved budget:</strong> £{{ '%.2f' | format(budget_obj.amount) }}</p>
+        {% if budget_obj.adjusted_amount is not none %}
+        <p><strong>Current adjusted amount:</strong> £{{ '%.2f' | format(budget_obj.adjusted_amount) }}</p>
+        <p class="text-muted small"><em>Previous note: {{ budget_obj.adjustment_note }}</em></p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="alert alert-warning">
+      Mid-year budget adjustments must be approved by council resolution.
+      The adjustment and your note will be permanently recorded in the audit log.
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label" for="adjusted_amount">
+              New budget amount (£) <span class="text-danger">*</span>
+            </label>
+            <input type="number" id="adjusted_amount" name="adjusted_amount" class="form-control"
+                   step="0.01" min="0" value="{{ '%.2f' | format(budget_obj.effective_amount) }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="adjustment_note">
+              Reason / minute reference <span class="text-danger">*</span>
+            </label>
+            <textarea id="adjustment_note" name="adjustment_note" class="form-control" rows="3"
+                      placeholder="e.g. Adjusted following council resolution at March 2026 meeting (Min 45/26)" required></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning">Save Adjustment</button>
+            <a href="{{ url_for('budget.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Bank Reconciliation{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Bank Reconciliation — {{ fy.label }}</h2>
+  {% if current_user.can_edit %}
+  <a href="{{ url_for('reconciliation.new') }}" class="btn btn-primary">+ New Reconciliation</a>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if recons %}
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th class="text-end">Opening Balance (£)</th>
+          <th class="text-end">Closing Balance (£)</th>
+          <th class="text-end">Difference (£)</th>
+          <th>Status</th>
+          <th>Signed Off By</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recons %}
+        <tr>
+          <td class="fw-semibold">{{ r.label }}</td>
+          <td class="text-end">{{ '%.2f' | format(r.opening_balance) }}</td>
+          <td class="text-end">{{ '%.2f' | format(r.closing_balance) }}</td>
+          <td class="text-end {% if not r.is_balanced %}text-danger fw-bold{% else %}text-success{% endif %}">
+            {{ '%.2f' | format(r.difference) }}
+          </td>
+          <td>
+            {% if r.is_complete %}
+              <span class="badge cf-badge-ok">&#10003; Signed off</span>
+            {% elif r.is_balanced %}
+              <span class="badge cf-badge-warn">Ready to sign off</span>
+            {% else %}
+              <span class="badge cf-badge-none">Not balanced</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.signed_off_by %}{{ r.signed_off_by.name }}{% else %}—{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('reconciliation.view', recon_id=r.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+            {% if current_user.can_edit and not r.is_complete %}
+            <a href="{{ url_for('reconciliation.edit', recon_id=r.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="p-3 text-muted mb-0">
+      No reconciliations yet.
+      {% if current_user.can_edit %}
+        <a href="{{ url_for('reconciliation.new') }}">Create the first one</a>.
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="alert alert-info mt-3">
+  <strong>How bank reconciliation works:</strong>
+  Enter your bank statement closing balance and any outstanding (uncleared) items.
+  The system calculates the difference. You can only sign off when the difference is £0.00.
+</div>
+{% endblock %}

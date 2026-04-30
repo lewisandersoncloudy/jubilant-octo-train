@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Budget Headings{% endblock %}
+
+{% block content %}
+<h2 class="cf-page-title mb-3">Budget Headings</h2>
+
+<div class="alert alert-info">
+  Budget headings are shared across all financial years. Adding or removing headings affects all years.
+  Headings with recorded transactions should not be deleted — deactivate them instead if no longer needed.
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header cf-card-header">Receipts headings</div>
+      <ul class="list-group list-group-flush">
+        {% for h in headings if h.category == 'receipts' %}
+        <li class="list-group-item d-flex justify-content-between align-items-center {% if not h.is_active %}text-muted{% endif %}">
+          {{ h.name }}
+          {% if not h.is_active %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header cf-card-header">Payments headings</div>
+      <ul class="list-group list-group-flush">
+        {% for h in headings if h.category == 'payments' %}
+        <li class="list-group-item d-flex justify-content-between align-items-center {% if not h.is_active %}text-muted{% endif %}">
+          {{ h.name }}
+          {% if not h.is_active %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% if current_user.can_edit %}
+<div class="card">
+  <div class="card-header cf-card-header">Add new heading</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('budget.add_heading') }}" class="row g-2 align-items-end">
+      <div class="col-sm-5">
+        <label class="form-label" for="hName">Heading name</label>
+        <input type="text" id="hName" name="name" class="form-control" required>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label" for="hCat">Category</label>
+        <select id="hCat" name="category" class="form-select">
+          <option value="receipts">Receipts</option>
+          <option value="payments">Payments</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Add Heading</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

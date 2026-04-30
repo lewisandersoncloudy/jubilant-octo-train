@@ -1,0 +1,222 @@
+/* ===== Council Finance — Custom Styles ===== */
+
+:root {
+  --cf-navy:      #1a3a5c;
+  --cf-navy-dark: #122a44;
+  --cf-blue-mid:  #2d5986;
+  --cf-accent:    #4a8fcc;
+  --cf-receipt:   #0a5c2e;
+  --cf-payment:   #7a1a1a;
+  --cf-green:     #28a745;
+  --cf-amber:     #ffc107;
+  --cf-red:       #dc3545;
+  --cf-light:     #f5f7fa;
+  --cf-border:    #d9e0ea;
+}
+
+/* ===== Navbar ===== */
+.cf-navbar {
+  background-color: var(--cf-navy) !important;
+  border-bottom: 3px solid var(--cf-accent);
+}
+
+.cf-navbar .navbar-brand {
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.cf-role-badge {
+  font-size: 0.7rem;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  padding: 2px 5px;
+}
+
+/* ===== Footer ===== */
+.cf-footer {
+  background: var(--cf-light);
+  border-top: 1px solid var(--cf-border);
+  padding: 10px 0;
+  color: #666;
+}
+
+/* ===== Page titles ===== */
+.cf-page-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--cf-navy);
+  margin-bottom: 0;
+}
+
+.cf-brand-title {
+  color: var(--cf-navy);
+}
+
+/* ===== Card headers ===== */
+.cf-card-header {
+  background: var(--cf-light);
+  border-bottom: 2px solid var(--cf-border);
+  font-weight: 600;
+  color: var(--cf-navy);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cf-inner-card {
+  background: #f8f9fc;
+  border: 1px solid var(--cf-border);
+}
+
+/* ===== Stat cards (dashboard) ===== */
+.cf-stat-card {
+  border: none;
+  border-radius: 6px;
+}
+
+.cf-stat-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 4px;
+}
+
+.cf-stat-value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1.1;
+}
+
+.cf-stat-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+  margin-top: 2px;
+}
+
+.cf-stat-receipts  { background: var(--cf-receipt); }
+.cf-stat-payments  { background: var(--cf-payment); }
+.cf-stat-positive  { background: #1a6b3c; }
+.cf-stat-negative  { background: var(--cf-red); }
+.cf-stat-neutral   { background: var(--cf-blue-mid); }
+
+/* ===== Cashbook table ===== */
+.cf-cashbook-table thead th {
+  background: var(--cf-navy);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-color: var(--cf-navy-dark);
+}
+
+.cf-receipt-row {
+  border-left: 3px solid #28a745 !important;
+}
+
+.cf-payment-row {
+  border-left: 3px solid var(--cf-red) !important;
+}
+
+.cf-void-row {
+  opacity: 0.55;
+  background: #f8f8f8 !important;
+  text-decoration: line-through;
+}
+
+/* ===== Badges ===== */
+.cf-badge-receipt  { background-color: #1a6b3c; color: white; }
+.cf-badge-payment  { background-color: #8b2020; color: white; }
+.cf-badge-ok       { background-color: var(--cf-green); color: white; }
+.cf-badge-warn     { background-color: var(--cf-amber); color: #222; }
+.cf-badge-none     { background-color: #adb5bd; color: white; }
+
+/* ===== Total pills (cashbook totals bar) ===== */
+.cf-total-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+}
+
+.cf-total-receipts { background: #d4edda; color: #155724; }
+.cf-total-payments { background: #f8d7da; color: #721c24; }
+.cf-total-net      { background: #d1ecf1; color: #0c5460; }
+
+/* ===== RAG indicators ===== */
+.cf-rag { font-size: 0.82rem; font-weight: 600; }
+.cf-rag-green { color: var(--cf-green); }
+.cf-rag-amber { color: #d39e00; }
+.cf-rag-red   { color: var(--cf-red); }
+
+/* ===== Progress bars ===== */
+.cf-prog-green { background-color: var(--cf-green); }
+.cf-prog-amber { background-color: var(--cf-amber); }
+.cf-prog-red   { background-color: var(--cf-red); }
+.cf-prog-grey  { background-color: #adb5bd; }
+
+/* ===== Reconciliation calculator ===== */
+.cf-recon-calc {
+  background: #f0f4f9;
+  border: 1px solid var(--cf-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.cf-calc-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.05em;
+}
+
+.cf-calc-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cf-navy);
+}
+
+.cf-calc-op {
+  font-size: 1.3rem;
+  font-weight: 300;
+  color: #999;
+  padding-top: 16px;
+}
+
+/* ===== Read-only calculated field ===== */
+.cf-readonly-calc {
+  background: #f0f4f9;
+  color: var(--cf-navy);
+  font-weight: 600;
+  cursor: default;
+}
+
+/* ===== Reserves ===== */
+.cf-reserve-balance {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--cf-navy);
+}
+
+/* ===== Transaction type labels on add form ===== */
+.cf-type-receipt { color: var(--cf-receipt); }
+.cf-type-payment { color: var(--cf-payment); }
+
+/* ===== Tables — general enhancements ===== */
+.table > tbody > tr:last-child > td { border-bottom: none; }
+
+/* ===== Login page ===== */
+.cf-brand-title { color: var(--cf-navy); font-size: 2rem; }
+
+/* ===== Responsive tweaks ===== */
+@media (max-width: 768px) {
+  .cf-stat-value { font-size: 1.3rem; }
+  .cf-reserve-balance { font-size: 1.4rem; }
+}
+
+/* ===== Print ===== */
+@media print {
+  .cf-navbar, .cf-footer, .btn, form { display: none !important; }
+  .card { border: 1px solid #ccc !important; }
+}

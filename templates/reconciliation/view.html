@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}{{ recon.label }} Reconciliation{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">{{ recon.label }} Reconciliation — {{ fy.label }}</h2>
+  <div class="d-flex gap-2">
+    {% if current_user.can_edit and not recon.is_complete %}
+    <a href="{{ url_for('reconciliation.edit', recon_id=recon.id) }}" class="btn btn-outline-primary">Edit</a>
+    <form method="post" action="{{ url_for('reconciliation.sign_off', recon_id=recon.id) }}">
+      <button type="submit" class="btn btn-success"
+              {% if not recon.is_balanced %}disabled title="Cannot sign off — difference must be £0.00"{% endif %}>
+        Sign Off
+      </button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('reconciliation.index') }}" class="btn btn-outline-secondary">Back</a>
+  </div>
+</div>
+
+{% if recon.is_complete %}
+<div class="alert alert-success">
+  <strong>&#10003; Signed off</strong> by {{ recon.signed_off_by.name }}
+  on {{ recon.signed_off_at.strftime('%d/%m/%Y at %H:%M') }}.
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+  {# Reconciliation summary #}
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Bank Reconciliation Statement</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tr>
+            <td>Opening balance (bank)</td>
+            <td class="text-end fw-semibold">£{{ '%.2f' | format(recon.opening_balance) }}</td>
+          </tr>
+          <tr>
+            <td>Add: outstanding receipts</td>
+            <td class="text-end">£{{ '%.2f' | format(recon.outstanding_receipts) }}</td>
+          </tr>
+          <tr>
+            <td>Less: outstanding payments</td>
+            <td class="text-end">(£{{ '%.2f' | format(recon.outstanding_payments) }})</td>
+          </tr>
+          <tr class="table-light">
+            <td><strong>Adjusted cashbook balance</strong></td>
+            <td class="text-end fw-bold">£{{ '%.2f' | format(recon.cashbook_balance) }}</td>
+          </tr>
+          <tr>
+            <td>Bank statement closing balance</td>
+            <td class="text-end fw-semibold">£{{ '%.2f' | format(recon.closing_balance) }}</td>
+          </tr>
+          <tr class="{% if recon.is_balanced %}table-success{% else %}table-danger{% endif %}">
+            <td><strong>Difference</strong></td>
+            <td class="text-end fw-bold">£{{ '%.2f' | format(recon.difference) }}</td>
+          </tr>
+        </table>
+        {% if not recon.is_balanced %}
+        <div class="p-2 text-danger small">
+          &#9888; The reconciliation does not balance. Check for unrecorded transactions or incorrect amounts.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Cashbook activity for the month #}
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Cashbook Activity — {{ recon.label }}</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tr>
+            <td>Total receipts (gross)</td>
+            <td class="text-end">£{{ '%.2f' | format(cashbook_receipts) }}</td>
+          </tr>
+          <tr>
+            <td>Total payments (gross)</td>
+            <td class="text-end">£{{ '%.2f' | format(cashbook_payments) }}</td>
+          </tr>
+          <tr class="table-light">
+            <td><strong>Net movement</strong></td>
+            <td class="text-end fw-bold">£{{ '%.2f' | format(cashbook_receipts - cashbook_payments) }}</td>
+          </tr>
+          <tr>
+            <td>Number of transactions</td>
+            <td class="text-end">{{ month_txns | length }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if recon.notes %}
+<div class="alert alert-light border">
+  <strong>Notes:</strong> {{ recon.notes }}
+</div>
+{% endif %}
+
+{# Transaction list for the month #}
+{% if month_txns %}
+<div class="card">
+  <div class="card-header cf-card-header">Transactions in {{ recon.label }}</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm cf-cashbook-table mb-0">
+        <thead>
+          <tr>
+            <th>Date</th><th>Ref</th><th>Type</th><th>Payee / Payer</th>
+            <th>Description</th><th class="text-end">Gross (£)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in month_txns %}
+          <tr class="{% if t.transaction_type == 'receipt' %}cf-receipt-row{% else %}cf-payment-row{% endif %}">
+            <td>{{ t.date.strftime('%d/%m/%Y') }}</td>
+            <td>{{ t.reference }}</td>
+            <td><span class="badge {% if t.transaction_type == 'receipt' %}cf-badge-receipt{% else %}cf-badge-payment{% endif %}">{{ t.type_label }}</span></td>
+            <td>{{ t.payee_payer }}</td>
+            <td>{{ t.description }}</td>
+            <td class="text-end fw-semibold">{{ '%.2f' | format(t.gross_amount) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

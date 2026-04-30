@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Void Transaction{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-5">
+    <h2 class="cf-page-title mb-3">Void Transaction</h2>
+
+    <div class="card border-danger mb-3">
+      <div class="card-header bg-danger text-white">Transaction details</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tr><th>Date</th><td>{{ txn.date.strftime('%d/%m/%Y') }}</td></tr>
+          <tr><th>Reference</th><td>{{ txn.reference }}</td></tr>
+          <tr><th>Type</th><td>{{ txn.type_label }}</td></tr>
+          <tr><th>Payee / Payer</th><td>{{ txn.payee_payer }}</td></tr>
+          <tr><th>Description</th><td>{{ txn.description }}</td></tr>
+          <tr><th>Heading</th><td>{{ txn.heading.name }}</td></tr>
+          <tr><th>Net Amount</th><td>£{{ '%.2f' | format(txn.net_amount) }}</td></tr>
+          <tr><th>VAT Amount</th><td>£{{ '%.2f' | format(txn.vat_amount) }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>Important:</strong> Voided transactions are kept in the cashbook for audit purposes.
+      They will no longer count towards totals. This action cannot be undone.
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label" for="void_reason">
+              Reason for voiding <span class="text-danger">*</span>
+            </label>
+            <textarea id="void_reason" name="void_reason" class="form-control" rows="3"
+                      placeholder="e.g. Duplicate entry, incorrect amount — correct entry is REF-042"
+                      required></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">Void This Transaction</button>
+            <a href="{{ url_for('cashbook.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
