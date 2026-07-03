@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Council Settings{% endblock %}
+
+{% block content %}
+<h2 class="cf-page-title mb-4">Council &amp; System Settings</h2>
+
+<div class="row g-4">
+  {# Council details #}
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header cf-card-header">Council Details &amp; Accounting</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('council_settings.index') }}">
+          <div class="mb-3">
+            <label class="form-label" for="council_name">Council name <span class="text-danger">*</span></label>
+            <input type="text" id="council_name" name="council_name" class="form-control"
+                   value="{{ settings.council_name }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="council_address">Address</label>
+            <textarea id="council_address" name="council_address" class="form-control" rows="3">{{ settings.council_address or '' }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="accounting_basis">Accounting basis</label>
+            <select id="accounting_basis" name="accounting_basis" class="form-select">
+              <option value="receipts_payments" {% if settings.accounting_basis == 'receipts_payments' %}selected{% endif %}>
+                Receipts &amp; Payments (cash basis — most parish councils)
+              </option>
+              <option value="income_expenditure" {% if settings.accounting_basis == 'income_expenditure' %}selected{% endif %}>
+                Income &amp; Expenditure (accruals basis)
+              </option>
+            </select>
+            <div class="form-text">Changing accounting basis affects which reports and menus are available.</div>
+          </div>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="vat_registered" name="vat_registered"
+                       value="1" {% if settings.vat_registered %}checked{% endif %}>
+                <label class="form-check-label" for="vat_registered">VAT registered</label>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="vat_number">VAT registration number</label>
+              <input type="text" id="vat_number" name="vat_number" class="form-control"
+                     value="{{ settings.vat_number or '' }}" placeholder="GB123456789">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3">Save Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# SharePoint config (stored in DB, credentials via env vars) #}
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header cf-card-header">SharePoint Document Storage</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('council_settings.index') }}">
+          <p class="text-muted small mb-3">
+            Configure your SharePoint library for storing uploaded invoices and receipts.
+            Set the Microsoft Graph API credentials as server environment variables
+            (SHAREPOINT_TENANT_ID, SHAREPOINT_CLIENT_ID, SHAREPOINT_CLIENT_SECRET).
+          </p>
+          <div class="mb-3">
+            <label class="form-label" for="sharepoint_site_url">SharePoint site URL</label>
+            <input type="text" id="sharepoint_site_url" name="sharepoint_site_url" class="form-control"
+                   value="{{ settings.sharepoint_site_url or '' }}"
+                   placeholder="https://yourorg.sharepoint.com/sites/Finance">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="sharepoint_library">Document library</label>
+            <input type="text" id="sharepoint_library" name="sharepoint_library" class="form-control"
+                   value="{{ settings.sharepoint_library or 'Shared Documents' }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="sharepoint_folder">Folder path</label>
+            <input type="text" id="sharepoint_folder" name="sharepoint_folder" class="form-control"
+                   value="{{ settings.sharepoint_folder or 'Council Finance/Documents' }}">
+          </div>
+          {% if sp_configured %}
+          <div class="alert alert-success py-2 small">&#10003; SharePoint API credentials found in environment.</div>
+          {% else %}
+          <div class="alert alert-warning py-2 small">
+            SharePoint API credentials not set. Uploads will be skipped until environment variables are configured.
+          </div>
+          {% endif %}
+          {# Include main council fields as hidden to avoid overwriting them on this partial submit #}
+          <input type="hidden" name="council_name" value="{{ settings.council_name }}">
+          <input type="hidden" name="accounting_basis" value="{{ settings.accounting_basis }}">
+          <button type="submit" class="btn btn-outline-primary">Save SharePoint Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# Bank accounts #}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header cf-card-header">Bank Accounts</div>
+      <div class="card-body">
+        {% if bank_accounts %}
+        <div class="table-responsive mb-3">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>Name</th><th>Type</th><th>Bank</th><th>Account no. (last 4)</th><th>Primary</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for b in bank_accounts %}
+              <tr {% if not b.is_active %}class="text-muted"{% endif %}>
+                <td>{{ b.name }}</td>
+                <td>{{ b.account_type | capitalize }}</td>
+                <td>{{ b.bank_name or '—' }}</td>
+                <td>{{ b.account_number_last4 or '—' }}</td>
+                <td>{% if b.is_primary %}<span class="badge cf-badge-ok">Primary</span>{% endif %}</td>
+                <td>
+                  {% if b.is_active %}
+                  <form method="post" action="{{ url_for('council_settings.deactivate_bank_account', acct_id=b.id) }}"
+                        style="display:inline"
+                        onsubmit="return confirm('Deactivate {{ b.name }}?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                  </form>
+                  {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No bank accounts configured yet.</p>
+        {% endif %}
+
+        <h6 class="mt-3">Add bank account</h6>
+        <form method="post" action="{{ url_for('council_settings.add_bank_account') }}" class="row g-2">
+          <div class="col-sm-3">
+            <input type="text" name="name" class="form-control form-control-sm" placeholder="Account name *" required>
+          </div>
+          <div class="col-sm-2">
+            <select name="account_type" class="form-select form-select-sm">
+              <option value="current">Current</option>
+              <option value="savings">Savings / PSDF</option>
+              <option value="deposit">Deposit</option>
+              <option value="investment">Investment</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="col-sm-2">
+            <input type="text" name="bank_name" class="form-control form-control-sm" placeholder="Bank name">
+          </div>
+          <div class="col-sm-2">
+            <input type="text" name="account_number_last4" class="form-control form-control-sm"
+                   placeholder="Last 4 digits" maxlength="4">
+          </div>
+          <div class="col-sm-2">
+            <div class="form-check mt-1">
+              <input class="form-check-input" type="checkbox" name="is_primary" id="isPrimary" value="1">
+              <label class="form-check-label small" for="isPrimary">Primary</label>
+            </div>
+          </div>
+          <div class="col-sm-1">
+            <button type="submit" class="btn btn-sm btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

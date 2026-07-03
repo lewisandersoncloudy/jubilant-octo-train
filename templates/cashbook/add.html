@@ -3,13 +3,13 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-9 col-lg-7">
+  <div class="col-md-10 col-lg-8">
     <h2 class="cf-page-title mb-3">Add Transaction — {{ fy.label }}</h2>
     <div class="card">
       <div class="card-body">
-        <form method="post" id="txnForm">
+        <form method="post" enctype="multipart/form-data" id="txnForm">
 
-          {# Type selector — prominent #}
+          {# Type selector #}
           <div class="mb-3">
             <label class="form-label fw-semibold">Transaction type <span class="text-danger">*</span></label>
             <div class="d-flex gap-3">
@@ -73,6 +73,31 @@
           </div>
 
           <div class="row g-3 mt-0">
+            <div class="col-sm-6">
+              <label class="form-label" for="bank_account_id">Bank account</label>
+              <select id="bank_account_id" name="bank_account_id" class="form-select">
+                <option value="">— none / not specified —</option>
+                {% for b in bank_accounts %}
+                <option value="{{ b.id }}" {% if form.get('bank_account_id', '') == b.id|string %}selected{% endif %}>
+                  {{ b.display_name }}{% if b.is_primary %} (primary){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="grant_id">Associated grant (optional)</label>
+              <select id="grant_id" name="grant_id" class="form-select">
+                <option value="">— none —</option>
+                {% for g in grants %}
+                <option value="{{ g.id }}" {% if form.get('grant_id', '') == g.id|string %}selected{% endif %}>
+                  {{ g.name }} ({{ g.grant_type }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-0">
             <div class="col-sm-4">
               <label class="form-label" for="net_amount">Net amount (£) <span class="text-danger">*</span></label>
               <input type="number" id="net_amount" name="net_amount" class="form-control"
@@ -91,11 +116,37 @@
             </div>
           </div>
 
+          <div class="row mt-3">
+            <div class="col-sm-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="vat_reclaimable" id="vatReclaimable"
+                       value="1" {% if form.get('vat_reclaimable') == '1' %}checked{% endif %}>
+                <label class="form-check-label" for="vatReclaimable">VAT is reclaimable (VAT126)</label>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="section_137" id="section137"
+                       value="1" {% if form.get('section_137') == '1' %}checked{% endif %}>
+                <label class="form-check-label" for="section137">
+                  Section 137 expenditure
+                  <span class="text-muted small">(discretionary power)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div class="mt-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="vat_reclaimable" id="vatReclaimable"
-                     value="1" {% if form.get('vat_reclaimable') == '1' %}checked{% endif %}>
-              <label class="form-check-label" for="vatReclaimable">VAT is reclaimable (VAT126)</label>
+            <label class="form-label" for="document">Supporting document (invoice / receipt)</label>
+            <input type="file" id="document" name="document" class="form-control"
+                   accept=".pdf,.png,.jpg,.jpeg,.gif,.tiff,.docx,.xlsx,.msg">
+            <div class="form-text">
+              PDF, image, Word, or Excel — max 50 MB.
+              {% if settings and settings.sharepoint_site_url %}
+              <span class="text-success">SharePoint upload configured.</span>
+              {% else %}
+              <span class="text-muted">SharePoint not configured — document will not be stored.</span>
+              {% endif %}
             </div>
           </div>
 
@@ -117,7 +168,6 @@
 
 {% block scripts %}
 <script>
-const headings = {{ headings | map(attribute='id') | list | tojson }};
 const headingData = {
   {% for h in headings %}
   "{{ h.id }}": "{{ h.category }}",
@@ -133,7 +183,6 @@ function updateHeadings() {
     if (!opt.value) return;
     opt.style.display = (category && opt.dataset.category !== category) ? 'none' : '';
   });
-  // Reset if selected heading no longer valid
   if (current && headingData[current] && category && headingData[current] !== category) {
     sel.value = '';
   }

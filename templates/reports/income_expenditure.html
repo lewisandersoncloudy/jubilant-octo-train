@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Income &amp; Expenditure Account — {{ fy.label }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12pt; margin: 2cm; color: #111; }
+    h1 { font-size: 16pt; border-bottom: 2px solid #1a3a5c; padding-bottom: 6px; }
+    h2 { font-size: 13pt; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #1a3a5c; color: white; padding: 6px 8px; text-align: left; }
+    th.num { text-align: right; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
+    td.num { text-align: right; }
+    tr.subtotal td { border-top: 1px solid #1a3a5c; font-weight: bold; background: #f5f7fa; }
+    tr.total td { border-top: 2px solid #1a3a5c; font-weight: bold; font-size: 13pt; background: #eaf0f8; }
+    tr.adj td { color: #555; font-style: italic; }
+    .footer { margin-top: 30px; font-size: 10pt; color: #666; border-top: 1px solid #ccc; padding-top: 8px; }
+    @media print { body { margin: 1.5cm; } }
+  </style>
+</head>
+<body>
+<h1>
+  {% if settings %}{{ settings.council_name }} — {% endif %}Income &amp; Expenditure Account<br>
+  <small>Financial Year {{ fy.label }} ({{ fy.start_date.strftime('%d/%m/%Y') }} to {{ fy.end_date.strftime('%d/%m/%Y') }})</small>
+</h1>
+
+<h2>Income</h2>
+<table>
+  <thead><tr><th>Heading</th><th class="num">Cash receipts (£)</th></tr></thead>
+  <tbody>
+    {% for row in income_rows %}
+    <tr>
+      <td>{{ row.heading.name }}</td>
+      <td class="num">{{ '%.2f' | format(row.total) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="subtotal">
+      <td>Total cash income</td>
+      <td class="num">{{ '%.2f' | format(total_income) }}</td>
+    </tr>
+    {% if accrued_income %}
+    <tr class="adj"><td>Add: accrued income and debtors</td><td class="num">{{ '%.2f' | format(accrued_income) }}</td></tr>
+    {% endif %}
+    {% if prepayments %}
+    <tr class="adj"><td>Less: prepayments</td><td class="num">({{ '%.2f' | format(prepayments) }})</td></tr>
+    {% endif %}
+    <tr class="subtotal"><td><strong>Total Income</strong></td><td class="num"><strong>{{ '%.2f' | format(adj_income) }}</strong></td></tr>
+  </tbody>
+</table>
+
+<h2>Expenditure</h2>
+<table>
+  <thead><tr><th>Heading</th><th class="num">Cash payments (£)</th></tr></thead>
+  <tbody>
+    {% for row in expenditure_rows %}
+    <tr>
+      <td>{{ row.heading.name }}</td>
+      <td class="num">{{ '%.2f' | format(row.total) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="subtotal">
+      <td>Total cash expenditure</td>
+      <td class="num">{{ '%.2f' | format(total_expenditure) }}</td>
+    </tr>
+    {% if accrued_exp %}
+    <tr class="adj"><td>Add: accrued expenditure and creditors</td><td class="num">{{ '%.2f' | format(accrued_exp) }}</td></tr>
+    {% endif %}
+    <tr class="subtotal"><td><strong>Total Expenditure</strong></td><td class="num"><strong>{{ '%.2f' | format(adj_expenditure) }}</strong></td></tr>
+  </tbody>
+</table>
+
+<table style="margin-top:16px;">
+  <tbody>
+    <tr class="total">
+      <td>{% if surplus >= 0 %}Surplus{% else %}Deficit{% endif %} for the year</td>
+      <td class="num">£{{ '%.2f' | format(surplus|abs) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+{% if accruals %}
+<h2>Accruals &amp; Prepayments included above</h2>
+<table>
+  <thead><tr><th>Description</th><th>Type</th><th class="num">Amount (£)</th></tr></thead>
+  <tbody>
+    {% for a in accruals %}
+    <tr class="adj">
+      <td>{{ a.description }}</td>
+      <td>{{ a.type_label }}</td>
+      <td class="num">{{ '%.2f' | format(a.amount) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="footer">
+  Generated {{ generated.strftime('%d/%m/%Y at %H:%M') }} &bull;
+  Council Finance — Income &amp; Expenditure system &bull;
+  This is an unaudited management account.
+</div>
+</body>
+</html>

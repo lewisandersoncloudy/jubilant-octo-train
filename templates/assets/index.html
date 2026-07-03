@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Asset Register{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Asset Register</h2>
+  {% if current_user.can_edit %}
+  <a href="{{ url_for('assets.add') }}" class="btn btn-primary">+ Add Asset</a>
+  {% endif %}
+</div>
+
+{% if active %}
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card cf-stat-card cf-stat-neutral">
+      <div class="card-body">
+        <div class="cf-stat-label">Total Cost</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(total_cost) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card cf-stat-card cf-stat-positive">
+      <div class="card-body">
+        <div class="cf-stat-label">Net Book Value</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(total_nbv) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card cf-stat-card cf-stat-neutral">
+      <div class="card-body">
+        <div class="cf-stat-label">Insurance Value</div>
+        <div class="cf-stat-value">£{{ '%.2f' | format(total_insured) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header cf-card-header">Active Assets</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th>Category</th>
+            <th>Acquired</th>
+            <th class="text-end">Cost (£)</th>
+            <th class="text-end">Accum. Dep. (£)</th>
+            <th class="text-end">NBV (£)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in active %}
+          <tr>
+            <td><a href="{{ url_for('assets.view', asset_id=a.id) }}">{{ a.name }}</a></td>
+            <td><small>{{ a.category }}</small></td>
+            <td class="text-nowrap">{{ a.acquisition_date.strftime('%d/%m/%Y') }}</td>
+            <td class="text-end">{{ '%.2f' | format(a.acquisition_cost) }}</td>
+            <td class="text-end">{{ '%.2f' | format(a.accumulated_depreciation()) }}</td>
+            <td class="text-end fw-semibold">{{ '%.2f' | format(a.net_book_value()) }}</td>
+            <td>
+              {% if current_user.can_edit %}
+              <a href="{{ url_for('assets.dispose', asset_id=a.id) }}" class="btn btn-sm btn-outline-secondary">Dispose</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if disposed %}
+<div class="card">
+  <div class="card-header cf-card-header">Disposed Assets</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th>Category</th>
+            <th>Disposed</th>
+            <th class="text-end">Cost (£)</th>
+            <th class="text-end">Proceeds (£)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in disposed %}
+          <tr class="text-muted">
+            <td><a href="{{ url_for('assets.view', asset_id=a.id) }}">{{ a.name }}</a></td>
+            <td><small>{{ a.category }}</small></td>
+            <td class="text-nowrap">{{ a.disposal_date.strftime('%d/%m/%Y') if a.disposal_date else '—' }}</td>
+            <td class="text-end">{{ '%.2f' | format(a.acquisition_cost) }}</td>
+            <td class="text-end">{{ '%.2f' | format(a.disposal_proceeds or 0) }}</td>
+            <td><a href="{{ url_for('assets.view', asset_id=a.id) }}" class="btn btn-sm btn-outline-secondary">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not active and not disposed %}
+<p class="text-muted">No assets recorded.
+  {% if current_user.can_edit %}<a href="{{ url_for('assets.add') }}">Add the first one</a>.{% endif %}
+</p>
+{% endif %}
+{% endblock %}

@@ -19,14 +19,27 @@
   </style>
 </head>
 <body>
-<h1>Receipts &amp; Payments Account<br>
-<small>Financial Year {{ fy.label }} ({{ fy.start_date.strftime('%d/%m/%Y') }} to {{ fy.end_date.strftime('%d/%m/%Y') }})</small></h1>
+<h1>
+  {% if settings %}{{ settings.council_name }} — {% endif %}Receipts &amp; Payments Account<br>
+  <small>Financial Year {{ fy.label }} ({{ fy.start_date.strftime('%d/%m/%Y') }} to {{ fy.end_date.strftime('%d/%m/%Y') }})</small>
+</h1>
+
+{% if opening_balance is not none %}
+<table style="margin-bottom:10px;">
+  <tbody>
+    <tr>
+      <td><strong>Opening balance (balances brought forward)</strong></td>
+      <td class="num"><strong>£{{ '%.2f' | format(opening_balance) }}</strong></td>
+    </tr>
+  </tbody>
+</table>
+{% endif %}
 
 <h2>Receipts</h2>
 <table>
   <thead><tr><th>Heading</th><th class="num">Amount (£)</th></tr></thead>
   <tbody>
-    {% for row in rows if row.heading.category == 'receipts' %}
+    {% for row in receipt_rows %}
     <tr>
       <td>{{ row.heading.name }}</td>
       <td class="num">{{ '%.2f' | format(row.total) }}</td>
@@ -43,7 +56,7 @@
 <table>
   <thead><tr><th>Heading</th><th class="num">Amount (£)</th></tr></thead>
   <tbody>
-    {% for row in rows if row.heading.category == 'payments' %}
+    {% for row in payment_rows %}
     <tr>
       <td>{{ row.heading.name }}</td>
       <td class="num">{{ '%.2f' | format(row.total) }}</td>
@@ -62,6 +75,12 @@
       <td>Net movement (Receipts less Payments)</td>
       <td class="num">{{ '%.2f' | format(net) }}</td>
     </tr>
+    {% if closing_balance is not none %}
+    <tr class="grand-total">
+      <td>Closing balance (balances carried forward)</td>
+      <td class="num">{{ '%.2f' | format(closing_balance) }}</td>
+    </tr>
+    {% endif %}
   </tbody>
 </table>
 

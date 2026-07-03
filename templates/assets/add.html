@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Add Asset{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <h2 class="cf-page-title mb-3">Add Asset</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-sm-8">
+              <label class="form-label" for="name">Asset name <span class="text-danger">*</span></label>
+              <input type="text" id="name" name="name" class="form-control"
+                     value="{{ form.get('name', '') }}" required>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="category">Category <span class="text-danger">*</span></label>
+              <select id="category" name="category" class="form-select" required>
+                {% for cat in ['land','buildings','equipment','vehicles','infrastructure','other'] %}
+                <option value="{{ cat }}" {% if form.get('category', 'other') == cat %}selected{% endif %}>
+                  {{ cat | capitalize }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label" for="description">Description</label>
+            <textarea id="description" name="description" class="form-control" rows="2">{{ form.get('description', '') }}</textarea>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-4">
+              <label class="form-label" for="acquisition_date">Acquisition date <span class="text-danger">*</span></label>
+              <input type="date" id="acquisition_date" name="acquisition_date" class="form-control"
+                     value="{{ form.get('acquisition_date', '') }}" required>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="acquisition_cost">Cost (£) <span class="text-danger">*</span></label>
+              <input type="number" id="acquisition_cost" name="acquisition_cost" class="form-control"
+                     step="0.01" min="0.01" value="{{ form.get('acquisition_cost', '') }}" required>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="location">Location</label>
+              <input type="text" id="location" name="location" class="form-control"
+                     value="{{ form.get('location', '') }}">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-6">
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" name="insured" id="insured"
+                       value="1" {% if form.get('insured', '1') == '1' %}checked{% endif %}>
+                <label class="form-check-label" for="insured">Asset is insured</label>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="insurance_value">Insurance value (£)</label>
+              <input type="number" id="insurance_value" name="insurance_value" class="form-control"
+                     step="0.01" min="0" value="{{ form.get('insurance_value', '') }}">
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <h6 class="text-muted">Depreciation (Income &amp; Expenditure councils only)</h6>
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="depreciation_method">Depreciation method</label>
+              <select id="depreciation_method" name="depreciation_method" class="form-select">
+                <option value="none" {% if form.get('depreciation_method', 'none') == 'none' %}selected{% endif %}>No depreciation</option>
+                <option value="straight_line" {% if form.get('depreciation_method', '') == 'straight_line' %}selected{% endif %}>Straight line</option>
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="useful_life_years">Useful life (years)</label>
+              <input type="number" id="useful_life_years" name="useful_life_years" class="form-control"
+                     min="1" value="{{ form.get('useful_life_years', '') }}"
+                     placeholder="Required for straight-line">
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save Asset</button>
+            <a href="{{ url_for('assets.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

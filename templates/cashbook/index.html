@@ -42,10 +42,26 @@
         </select>
       </div>
       <div class="col-auto">
+        <label class="form-label mb-1 small">Bank</label>
+        <select name="bank" class="form-select form-select-sm">
+          <option value="">All banks</option>
+          {% for b in bank_accounts %}
+          <option value="{{ b.id }}" {% if filter_bank == b.id|string %}selected{% endif %}>{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
         <div class="form-check form-check-inline mt-3">
           <input class="form-check-input" type="checkbox" name="show_void" value="1"
                  id="showVoid" {% if show_void %}checked{% endif %}>
           <label class="form-check-label small" for="showVoid">Show voided</label>
+        </div>
+      </div>
+      <div class="col-auto">
+        <div class="form-check form-check-inline mt-3">
+          <input class="form-check-input" type="checkbox" name="s137" value="1"
+                 id="s137Only" {% if s137_only %}checked{% endif %}>
+          <label class="form-check-label small" for="s137Only">S.137 only</label>
         </div>
       </div>
       <div class="col-auto">
@@ -89,10 +105,12 @@
             <th>Payee / Payer</th>
             <th>Description</th>
             <th>Heading</th>
+            <th>Bank</th>
             <th class="text-end">Net (£)</th>
             <th class="text-end">VAT (£)</th>
             <th class="text-end">Gross (£)</th>
-            <th>VAT Recl.</th>
+            <th>Flags</th>
+            <th>Doc</th>
             {% if current_user.can_edit %}<th></th>{% endif %}
           </tr>
         </thead>
@@ -118,10 +136,21 @@
               {% endif %}
             </td>
             <td><small>{{ t.heading.name }}</small></td>
+            <td><small>{{ t.bank_account.name if t.bank_account else '—' }}</small></td>
             <td class="text-end text-nowrap">{{ '%.2f' | format(t.net_amount) }}</td>
             <td class="text-end text-nowrap">{{ '%.2f' | format(t.vat_amount) }}</td>
             <td class="text-end text-nowrap fw-semibold">{{ '%.2f' | format(t.gross_amount) }}</td>
-            <td>{% if t.vat_reclaimable %}<span class="badge cf-badge-ok">Yes</span>{% endif %}</td>
+            <td>
+              {% if t.vat_reclaimable %}<span class="badge cf-badge-ok" title="VAT reclaimable">VAT</span>{% endif %}
+              {% if t.section_137 %}<span class="badge bg-warning text-dark" title="Section 137">S.137</span>{% endif %}
+              {% if t.grant_id %}<span class="badge bg-info text-dark" title="Grant linked">Grant</span>{% endif %}
+            </td>
+            <td>
+              {% if t.document_url %}
+              <a href="{{ t.document_url }}" target="_blank" title="{{ t.document_filename }}"
+                 class="btn btn-sm btn-outline-secondary py-0 px-1">&#128196;</a>
+              {% endif %}
+            </td>
             {% if current_user.can_edit %}
             <td>
               {% if not t.is_void %}
@@ -136,7 +165,9 @@
       </table>
     </div>
     {% else %}
-    <p class="p-3 text-muted mb-0">No transactions found. {% if current_user.can_edit %}<a href="{{ url_for('cashbook.add') }}">Add the first one</a>.{% endif %}</p>
+    <p class="p-3 text-muted mb-0">No transactions found.
+      {% if current_user.can_edit %}<a href="{{ url_for('cashbook.add') }}">Add the first one</a>.{% endif %}
+    </p>
     {% endif %}
   </div>
 </div>

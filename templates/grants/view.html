@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ grant.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">{{ grant.name }}</h2>
+  <a href="{{ url_for('grants.index') }}" class="btn btn-outline-secondary">Back</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Grant Details</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Type</dt>
+          <dd class="col-sm-7">
+            <span class="badge {% if grant.grant_type == 'received' %}cf-badge-receipt{% else %}cf-badge-payment{% endif %}">
+              {{ grant.grant_type | capitalize }}
+            </span>
+          </dd>
+          <dt class="col-sm-5">Grantor</dt><dd class="col-sm-7">{{ grant.grantor }}</dd>
+          <dt class="col-sm-5">Amount</dt><dd class="col-sm-7 fw-bold">£{{ '%.2f' | format(grant.awarded_amount) }}</dd>
+          <dt class="col-sm-5">Award date</dt><dd class="col-sm-7">{{ grant.award_date.strftime('%d/%m/%Y') if grant.award_date else '—' }}</dd>
+          <dt class="col-sm-5">Deadline</dt><dd class="col-sm-7">{{ grant.expenditure_deadline.strftime('%d/%m/%Y') if grant.expenditure_deadline else '—' }}</dd>
+          <dt class="col-sm-5">Purpose</dt><dd class="col-sm-7">{{ grant.purpose or '—' }}</dd>
+          <dt class="col-sm-5">Conditions</dt><dd class="col-sm-7">{{ grant.conditions or '—' }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  {% if grant.grant_type == 'received' %}
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Spend Tracking</div>
+      <div class="card-body">
+        <div class="row text-center mb-3">
+          <div class="col-4">
+            <div class="fs-4 fw-bold">£{{ '%.2f' | format(grant.awarded_amount) }}</div>
+            <small class="text-muted">Awarded</small>
+          </div>
+          <div class="col-4">
+            <div class="fs-4 fw-bold text-danger">£{{ '%.2f' | format(grant.spent_amount) }}</div>
+            <small class="text-muted">Spent</small>
+          </div>
+          <div class="col-4">
+            <div class="fs-4 fw-bold {% if grant.unspent < 0 %}text-danger{% else %}text-success{% endif %}">
+              £{{ '%.2f' | format(grant.unspent) }}
+            </div>
+            <small class="text-muted">Unspent</small>
+          </div>
+        </div>
+        {% if txns %}
+        <h6 class="text-muted">Linked transactions</h6>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr><th>Date</th><th>Ref</th><th>Description</th><th class="text-end">Amount (£)</th></tr>
+            </thead>
+            <tbody>
+              {% for t in txns %}
+              <tr>
+                <td>{{ t.date.strftime('%d/%m/%Y') }}</td>
+                <td>{{ t.reference }}</td>
+                <td>{{ t.description }}</td>
+                <td class="text-end">{{ '%.2f' | format(t.gross_amount) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small">No transactions linked to this grant yet.
+          Link them by selecting this grant when adding a cashbook transaction.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

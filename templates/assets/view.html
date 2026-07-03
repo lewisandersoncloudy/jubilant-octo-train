@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}{{ asset.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">{{ asset.name }}</h2>
+  <div class="d-flex gap-2">
+    {% if current_user.can_edit and not asset.is_disposed %}
+    <a href="{{ url_for('assets.dispose', asset_id=asset.id) }}" class="btn btn-outline-warning">Record Disposal</a>
+    {% endif %}
+    <a href="{{ url_for('assets.index') }}" class="btn btn-outline-secondary">Back</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Asset Details</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Category</dt><dd class="col-sm-7">{{ asset.category | capitalize }}</dd>
+          <dt class="col-sm-5">Description</dt><dd class="col-sm-7">{{ asset.description or '—' }}</dd>
+          <dt class="col-sm-5">Acquired</dt><dd class="col-sm-7">{{ asset.acquisition_date.strftime('%d/%m/%Y') }}</dd>
+          <dt class="col-sm-5">Cost</dt><dd class="col-sm-7">£{{ '%.2f' | format(asset.acquisition_cost) }}</dd>
+          <dt class="col-sm-5">Location</dt><dd class="col-sm-7">{{ asset.location or '—' }}</dd>
+          <dt class="col-sm-5">Insured</dt>
+          <dd class="col-sm-7">
+            {% if asset.insured %}
+            Yes {% if asset.insurance_value %}— £{{ '%.2f' | format(asset.insurance_value) }}{% endif %}
+            {% else %}No{% endif %}
+          </dd>
+          <dt class="col-sm-5">Status</dt>
+          <dd class="col-sm-7">
+            {% if asset.is_disposed %}
+            <span class="badge bg-secondary">Disposed {{ asset.disposal_date.strftime('%d/%m/%Y') if asset.disposal_date else '' }}</span>
+            {% else %}
+            <span class="badge cf-badge-ok">Active</span>
+            {% endif %}
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Depreciation</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Method</dt>
+          <dd class="col-sm-6">{{ asset.depreciation_method | replace('_', ' ') | capitalize }}</dd>
+          <dt class="col-sm-6">Useful life</dt>
+          <dd class="col-sm-6">{{ asset.useful_life_years or '—' }}{% if asset.useful_life_years %} years{% endif %}</dd>
+          <dt class="col-sm-6">Annual charge</dt>
+          <dd class="col-sm-6">£{{ '%.2f' | format(asset.annual_depreciation()) }}</dd>
+          <dt class="col-sm-6">Accum. depreciation</dt>
+          <dd class="col-sm-6">£{{ '%.2f' | format(asset.accumulated_depreciation()) }}</dd>
+          <dt class="col-sm-6">Net book value</dt>
+          <dd class="col-sm-6 fw-bold">£{{ '%.2f' | format(asset.net_book_value()) }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  {% if asset.is_disposed %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header cf-card-header">Disposal</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Disposal date</dt>
+          <dd class="col-sm-9">{{ asset.disposal_date.strftime('%d/%m/%Y') if asset.disposal_date else '—' }}</dd>
+          <dt class="col-sm-3">Proceeds</dt>
+          <dd class="col-sm-9">£{{ '%.2f' | format(asset.disposal_proceeds or 0) }}</dd>
+          <dt class="col-sm-3">Reason</dt>
+          <dd class="col-sm-9">{{ asset.disposal_reason or '—' }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

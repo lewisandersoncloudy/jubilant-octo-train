@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Dispose Asset{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-5">
+    <h2 class="cf-page-title mb-3">Record Disposal — {{ asset.name }}</h2>
+    <div class="card">
+      <div class="card-body">
+        <dl class="row mb-3">
+          <dt class="col-sm-5">Cost</dt><dd class="col-sm-7">£{{ '%.2f' | format(asset.acquisition_cost) }}</dd>
+          <dt class="col-sm-5">Current NBV</dt><dd class="col-sm-7">£{{ '%.2f' | format(asset.net_book_value()) }}</dd>
+        </dl>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label" for="disposal_date">Disposal date <span class="text-danger">*</span></label>
+            <input type="date" id="disposal_date" name="disposal_date" class="form-control"
+                   value="{{ form.get('disposal_date', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="disposal_proceeds">Disposal proceeds (£)</label>
+            <input type="number" id="disposal_proceeds" name="disposal_proceeds" class="form-control"
+                   step="0.01" min="0" value="{{ form.get('disposal_proceeds', '0.00') }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="disposal_reason">Reason <span class="text-danger">*</span></label>
+            <textarea id="disposal_reason" name="disposal_reason" class="form-control" rows="2">{{ form.get('disposal_reason', '') }}</textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning"
+                    onclick="return confirm('Record disposal of {{ asset.name }}?')">Record Disposal</button>
+            <a href="{{ url_for('assets.view', asset_id=asset.id) }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

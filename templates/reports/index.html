@@ -2,14 +2,44 @@
 {% block title %}Reports{% endblock %}
 
 {% block content %}
-<h2 class="cf-page-title mb-3">Reports &amp; Exports</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Reports &amp; Exports</h2>
+  <form class="d-flex align-items-center gap-2" method="get" id="yearForm">
+    <label class="small text-muted mb-0">Year:</label>
+    <select name="fy" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+      {% for y in years %}
+      <option value="{{ y.id }}" {% if y.is_current %}selected{% endif %}>{{ y.label }}{% if y.is_current %} (current){% endif %}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
 
 <div class="row g-3">
+  {# Excel Workbook — flagship export #}
+  <div class="col-12">
+    <div class="card border-primary">
+      <div class="card-header cf-card-header">
+        &#128196; Full Excel Workbook
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-2">
+          Comprehensive multi-sheet Excel workbook: cashbook, budget vs actuals,
+          {% if settings and settings.is_ie %}income &amp; expenditure account, balance sheet,{% else %}receipts &amp; payments account,{% endif %}
+          VAT summary, asset register, and bank reconciliations.
+        </p>
+        <a href="{{ url_for('reports.excel_workbook') }}" class="btn btn-success">
+          &#8659; Download Excel Workbook (.xlsx)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# R&P Account #}
   <div class="col-md-6">
     <div class="card h-100">
       <div class="card-header cf-card-header">Receipts &amp; Payments Account</div>
       <div class="card-body">
-        <p class="text-muted">A summary of all receipts and payments grouped by heading for the current year. Suitable for presenting to council.</p>
+        <p class="text-muted">Summary of all receipts and payments by heading. Suitable for council meetings.</p>
         <a href="{{ url_for('reports.receipts_and_payments') }}" target="_blank" class="btn btn-outline-primary">
           View / Print (HTML)
         </a>
@@ -17,19 +47,49 @@
     </div>
   </div>
 
+  {% if settings and settings.is_ie %}
+  {# I&E Account #}
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header cf-card-header">Cashbook Export</div>
+      <div class="card-header cf-card-header">Income &amp; Expenditure Account</div>
       <div class="card-body">
-        <p class="text-muted">All transactions for the current year, including void entries, exported to CSV. Open in Excel or similar.</p>
+        <p class="text-muted">Accruals-adjusted income and expenditure account for the year.</p>
+        <a href="{{ url_for('reports.income_expenditure') }}" target="_blank" class="btn btn-outline-primary">
+          View / Print (HTML)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# Balance Sheet #}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Balance Sheet</div>
+      <div class="card-body">
+        <p class="text-muted">Statement of assets, liabilities, and reserves as at the year end.</p>
+        <a href="{{ url_for('reports.balance_sheet') }}" target="_blank" class="btn btn-outline-primary">
+          View / Print (HTML)
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# Cashbook CSV #}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Cashbook Export (CSV)</div>
+      <div class="card-body">
+        <p class="text-muted">All transactions including void entries, bank account, Section 137 flags, and document names.</p>
         <a href="{{ url_for('reports.cashbook_csv') }}" class="btn btn-outline-secondary">Download CSV</a>
       </div>
     </div>
   </div>
 
+  {# Budget CSV #}
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header cf-card-header">Budget vs Actuals</div>
+      <div class="card-header cf-card-header">Budget vs Actuals (CSV)</div>
       <div class="card-body">
         <p class="text-muted">Budget figures against actual spend to date, with remaining budget per heading.</p>
         <a href="{{ url_for('reports.budget_csv') }}" class="btn btn-outline-secondary">Download CSV</a>
@@ -37,16 +97,29 @@
     </div>
   </div>
 
+  {# VAT CSV #}
   <div class="col-md-6">
     <div class="card h-100">
       <div class="card-header cf-card-header">VAT Summary (VAT126)</div>
       <div class="card-body">
-        <p class="text-muted">All VAT transactions for the year. Use to prepare your VAT126 claim to HMRC.</p>
+        <p class="text-muted">All reclaimable VAT transactions. Use to prepare your VAT126 claim to HMRC.</p>
         <a href="{{ url_for('reports.vat_csv') }}" class="btn btn-outline-secondary">Download CSV</a>
       </div>
     </div>
   </div>
 
+  {# Section 137 CSV #}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header cf-card-header">Section 137 Report (CSV)</div>
+      <div class="card-body">
+        <p class="text-muted">All transactions flagged as Section 137 discretionary expenditure.</p>
+        <a href="{{ url_for('reports.section_137_csv') }}" class="btn btn-outline-secondary">Download CSV</a>
+      </div>
+    </div>
+  </div>
+
+  {# AGAR Helper #}
   <div class="col-md-6">
     <div class="card h-100">
       <div class="card-header cf-card-header">AGAR Helper</div>
@@ -60,6 +133,6 @@
 
 <div class="alert alert-info mt-4">
   <strong>Tip:</strong> For printing reports for council meetings, use your browser's Print function (Ctrl+P) on the HTML reports.
-  The pages are styled for printing.
+  The Excel workbook contains all data needed for your external auditor.
 </div>
 {% endblock %}

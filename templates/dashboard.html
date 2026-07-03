@@ -15,6 +15,14 @@
   {% endif %}
 </div>
 
+{% if overdue_recurring and overdue_recurring > 0 %}
+<div class="alert alert-warning alert-dismissible fade show">
+  <strong>{{ overdue_recurring }} recurring transaction{% if overdue_recurring != 1 %}s{% endif %} overdue.</strong>
+  <a href="{{ url_for('recurring.index') }}" class="alert-link">Review and post them now</a>.
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
 {% if not fy %}
 <div class="alert alert-warning">
   No current financial year is configured.
@@ -62,9 +70,7 @@
 
 {# Monthly workflow checklist #}
 <div class="card mb-4">
-  <div class="card-header cf-card-header">
-    Monthly Workflow
-  </div>
+  <div class="card-header cf-card-header">Monthly Workflow</div>
   <div class="card-body p-0">
     {% if month_status %}
     <table class="table table-sm mb-0">
@@ -115,7 +121,7 @@
   </div>
 </div>
 
-{# Quick links #}
+{# Quick links & year-end readiness #}
 <div class="row g-3">
   <div class="col-md-6">
     <div class="card h-100">
@@ -124,11 +130,12 @@
         <div class="d-grid gap-2">
           {% if current_user.can_edit %}
           <a href="{{ url_for('cashbook.add') }}" class="btn btn-outline-primary">Add Transaction</a>
+          <a href="{{ url_for('recurring.index') }}" class="btn btn-outline-secondary">Recurring Transactions</a>
           <a href="{{ url_for('reconciliation.new') }}" class="btn btn-outline-secondary">New Reconciliation</a>
           {% endif %}
           <a href="{{ url_for('cashbook.index') }}" class="btn btn-outline-secondary">View Cashbook</a>
           <a href="{{ url_for('budget.index') }}" class="btn btn-outline-secondary">Budget Monitor</a>
-          <a href="{{ url_for('reports.receipts_and_payments') }}" class="btn btn-outline-secondary">Receipts &amp; Payments Report</a>
+          <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary">Reports &amp; Exports</a>
         </div>
       </div>
     </div>
@@ -154,6 +161,12 @@
             {% if stats.transaction_count > 0 %}<span class="badge cf-badge-ok">&#10003;</span>
             {% else %}<span class="badge cf-badge-none">None yet</span>{% endif %}
           </li>
+          {% if settings and settings.is_ie %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            Accounting basis
+            <span class="badge bg-info text-dark">Income &amp; Expenditure</span>
+          </li>
+          {% endif %}
           <li class="list-group-item">
             <a href="{{ url_for('agar.index') }}" class="text-decoration-none">
               Check AGAR figures &rarr;

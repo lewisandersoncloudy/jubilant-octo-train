@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Add Grant{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+    <h2 class="cf-page-title mb-3">Add Grant</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Grant type <span class="text-danger">*</span></label>
+            <div class="d-flex gap-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="grant_type" id="typeReceived"
+                       value="received" {% if form.get('grant_type', 'received') == 'received' %}checked{% endif %} required>
+                <label class="form-check-label" for="typeReceived">
+                  <strong>Received</strong> — money awarded to the council
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="grant_type" id="typeAwarded"
+                       value="awarded" {% if form.get('grant_type', '') == 'awarded' %}checked{% endif %}>
+                <label class="form-check-label" for="typeAwarded">
+                  <strong>Awarded</strong> — money given out by the council
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-sm-8">
+              <label class="form-label" for="name">Name / Recipient <span class="text-danger">*</span></label>
+              <input type="text" id="name" name="name" class="form-control"
+                     value="{{ form.get('name', '') }}" required>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="awarded_amount">Amount (£) <span class="text-danger">*</span></label>
+              <input type="number" id="awarded_amount" name="awarded_amount" class="form-control"
+                     step="0.01" min="0.01" value="{{ form.get('awarded_amount', '') }}" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-6">
+              <label class="form-label" for="grantor">Funder / Grantor <span class="text-danger">*</span></label>
+              <input type="text" id="grantor" name="grantor" class="form-control"
+                     value="{{ form.get('grantor', '') }}" required>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="award_date">Award date</label>
+              <input type="date" id="award_date" name="award_date" class="form-control"
+                     value="{{ form.get('award_date', '') }}">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-6">
+              <label class="form-label" for="expenditure_deadline">Expenditure deadline</label>
+              <input type="date" id="expenditure_deadline" name="expenditure_deadline" class="form-control"
+                     value="{{ form.get('expenditure_deadline', '') }}">
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label" for="purpose">Purpose</label>
+            <textarea id="purpose" name="purpose" class="form-control" rows="2">{{ form.get('purpose', '') }}</textarea>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label" for="conditions">Conditions / restrictions</label>
+            <textarea id="conditions" name="conditions" class="form-control" rows="2">{{ form.get('conditions', '') }}</textarea>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save Grant</button>
+            <a href="{{ url_for('grants.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

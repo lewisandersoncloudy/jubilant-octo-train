@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Recurring Transactions{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="cf-page-title">Recurring Transactions</h2>
+  {% if current_user.can_edit %}
+  <a href="{{ url_for('recurring.add') }}" class="btn btn-primary">+ Add Recurring</a>
+  {% endif %}
+</div>
+
+{% if overdue %}
+<div class="card border-warning mb-4">
+  <div class="card-header bg-warning text-dark">
+    &#9888; {{ overdue | length }} Overdue — action required
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Payee / Payer</th>
+            <th>Frequency</th>
+            <th>Next due</th>
+            <th class="text-end">Amount (£)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in overdue %}
+          <tr>
+            <td class="fw-semibold">{{ r.name }}</td>
+            <td>
+              <span class="badge {% if r.transaction_type == 'receipt' %}cf-badge-receipt{% else %}cf-badge-payment{% endif %}">
+                {{ r.transaction_type | capitalize }}
+              </span>
+            </td>
+            <td>{{ r.payee_payer }}</td>
+            <td>{{ r.frequency | capitalize }}</td>
+            <td class="text-danger fw-semibold">{{ r.next_due_date.strftime('%d/%m/%Y') }}</td>
+            <td class="text-end">{{ '%.2f' | format(r.net_amount) }}</td>
+            <td>
+              {% if current_user.can_edit %}
+              <form method="post" action="{{ url_for('recurring.post', rec_id=r.id) }}"
+                    onsubmit="return confirm('Post {{ r.name }} to the cashbook?')">
+                <button type="submit" class="btn btn-sm btn-primary">Post to cashbook</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if upcoming %}
+<div class="card mb-4">
+  <div class="card-header cf-card-header">Upcoming</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Payee / Payer</th>
+            <th>Frequency</th>
+            <th>Next due</th>
+            <th class="text-end">Amount (£)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in upcoming %}
+          <tr>
+            <td>{{ r.name }}</td>
+            <td>
+              <span class="badge {% if r.transaction_type == 'receipt' %}cf-badge-receipt{% else %}cf-badge-payment{% endif %}">
+                {{ r.transaction_type | capitalize }}
+              </span>
+            </td>
+            <td>{{ r.payee_payer }}</td>
+            <td>{{ r.frequency | capitalize }}</td>
+            <td>{{ r.next_due_date.strftime('%d/%m/%Y') }}</td>
+            <td class="text-end">{{ '%.2f' | format(r.net_amount) }}</td>
+            <td>
+              {% if current_user.can_edit %}
+              <form method="post" action="{{ url_for('recurring.deactivate', rec_id=r.id) }}"
+                    onsubmit="return confirm('Deactivate {{ r.name }}?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not overdue and not upcoming %}
+<p class="text-muted">No active recurring transactions. <a href="{{ url_for('recurring.add') }}">Add one</a>.</p>
+{% endif %}
+
+<div class="mt-2">
+  <small class="text-muted">
+    Posting a recurring transaction creates a cashbook entry and advances the next due date.
+  </small>
+</div>
+{% endblock %}

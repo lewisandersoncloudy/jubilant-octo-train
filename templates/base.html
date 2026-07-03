@@ -13,7 +13,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark cf-navbar">
   <div class="container-fluid">
     <a class="navbar-brand fw-bold" href="{{ url_for('dashboard') }}">
-      &#9632; Council Finance
+      &#9632; {% if settings %}{{ settings.council_name }}{% else %}Council Finance{% endif %}
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
       <span class="navbar-toggler-icon"></span>
@@ -40,13 +40,30 @@
           <a class="nav-link {% if request.blueprint == 'reserves' %}active{% endif %}"
              href="{{ url_for('reserves.index') }}">Reserves</a>
         </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.blueprint in ('assets','accruals','grants','recurring') %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown">More</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item {% if request.blueprint == 'assets' %}active{% endif %}"
+                   href="{{ url_for('assets.index') }}">Asset Register</a></li>
+            <li><a class="dropdown-item {% if request.blueprint == 'grants' %}active{% endif %}"
+                   href="{{ url_for('grants.index') }}">Grants</a></li>
+            <li><a class="dropdown-item {% if request.blueprint == 'recurring' %}active{% endif %}"
+                   href="{{ url_for('recurring.index') }}">Recurring Transactions</a></li>
+            {% if settings and settings.is_ie %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item {% if request.blueprint == 'accruals' %}active{% endif %}"
+                   href="{{ url_for('accruals.index') }}">Accruals &amp; Prepayments</a></li>
+            {% endif %}
+          </ul>
+        </li>
         <li class="nav-item">
           <a class="nav-link {% if request.blueprint == 'vat' %}active{% endif %}"
              href="{{ url_for('vat.index') }}">VAT (126)</a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if request.blueprint == 'agar' %}active{% endif %}"
-             href="{{ url_for('agar.index') }}">AGAR Helper</a>
+             href="{{ url_for('agar.index') }}">AGAR</a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if request.blueprint == 'reports' %}active{% endif %}"
@@ -62,8 +79,11 @@
       <ul class="navbar-nav">
         {% if current_user.can_edit %}
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Settings</a>
+          <a class="nav-link dropdown-toggle {% if request.blueprint == 'council_settings' %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown">Settings</a>
           <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('council_settings.index') }}">Council &amp; System</a></li>
+            <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="{{ url_for('auth.users') }}">Users</a></li>
             <li><a class="dropdown-item" href="{{ url_for('budget.headings') }}">Budget Headings</a></li>
             <li><a class="dropdown-item" href="{{ url_for('financial_years.index') }}">Financial Years</a></li>
@@ -106,7 +126,9 @@
 <footer class="cf-footer mt-5">
   <div class="container-fluid">
     <small>
-      Council Finance &mdash; Receipts &amp; Payments accounting for parish &amp; town councils.
+      Council Finance &mdash;
+      {% if settings %}{{ settings.basis_label }}{% else %}Receipts &amp; Payments{% endif %}
+      &mdash;
       {% if current_fy %}Year: <strong>{{ current_fy.label }}</strong>{% endif %}
     </small>
   </div>

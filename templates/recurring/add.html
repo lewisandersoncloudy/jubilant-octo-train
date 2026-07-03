@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Add Recurring Transaction{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <h2 class="cf-page-title mb-3">Add Recurring Transaction</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label" for="name">Name / label <span class="text-danger">*</span></label>
+            <input type="text" id="name" name="name" class="form-control"
+                   value="{{ form.get('name', '') }}" placeholder="e.g. Monthly clerk salary" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Transaction type <span class="text-danger">*</span></label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="transaction_type" id="typeReceipt"
+                       value="receipt" {% if form.get('transaction_type', '') == 'receipt' %}checked{% endif %} required>
+                <label class="form-check-label" for="typeReceipt">Receipt</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="transaction_type" id="typePayment"
+                       value="payment" {% if form.get('transaction_type', 'payment') == 'payment' %}checked{% endif %}>
+                <label class="form-check-label" for="typePayment">Payment</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="payee_payer">Payee / Payer <span class="text-danger">*</span></label>
+              <input type="text" id="payee_payer" name="payee_payer" class="form-control"
+                     value="{{ form.get('payee_payer', '') }}" required>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="budget_heading_id">Budget heading <span class="text-danger">*</span></label>
+              <select id="budget_heading_id" name="budget_heading_id" class="form-select" required>
+                <option value="">— select —</option>
+                {% for h in headings %}
+                <option value="{{ h.id }}" {% if form.get('budget_heading_id', '') == h.id|string %}selected{% endif %}>
+                  {{ h.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label" for="description">Description</label>
+            <input type="text" id="description" name="description" class="form-control"
+                   value="{{ form.get('description', '') }}">
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-4">
+              <label class="form-label" for="net_amount">Net amount (£) <span class="text-danger">*</span></label>
+              <input type="number" id="net_amount" name="net_amount" class="form-control"
+                     step="0.01" min="0.01" value="{{ form.get('net_amount', '') }}" required>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="vat_amount">VAT amount (£)</label>
+              <input type="number" id="vat_amount" name="vat_amount" class="form-control"
+                     step="0.01" min="0" value="{{ form.get('vat_amount', '0.00') }}">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label" for="bank_account_id">Bank account</label>
+              <select id="bank_account_id" name="bank_account_id" class="form-select">
+                <option value="">— any —</option>
+                {% for b in bank_accounts %}
+                <option value="{{ b.id }}" {% if form.get('bank_account_id', '') == b.id|string %}selected{% endif %}>
+                  {{ b.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-0">
+            <div class="col-sm-6">
+              <label class="form-label" for="frequency">Frequency <span class="text-danger">*</span></label>
+              <select id="frequency" name="frequency" class="form-select" required>
+                {% for freq_key, freq_label in frequencies %}
+                <option value="{{ freq_key }}" {% if form.get('frequency', 'monthly') == freq_key %}selected{% endif %}>
+                  {{ freq_label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="next_due_date">First / next due date <span class="text-danger">*</span></label>
+              <input type="date" id="next_due_date" name="next_due_date" class="form-control"
+                     value="{{ form.get('next_due_date', '') }}" required>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="vat_reclaimable" id="vatReclaimable"
+                     value="1" {% if form.get('vat_reclaimable') == '1' %}checked{% endif %}>
+              <label class="form-check-label" for="vatReclaimable">VAT is reclaimable (VAT126)</label>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save Recurring Transaction</button>
+            <a href="{{ url_for('recurring.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

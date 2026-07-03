@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Balance Sheet — {{ fy.label }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12pt; margin: 2cm; color: #111; }
+    h1 { font-size: 16pt; border-bottom: 2px solid #1a3a5c; padding-bottom: 6px; }
+    h2 { font-size: 13pt; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #1a3a5c; color: white; padding: 6px 8px; text-align: left; }
+    th.num { text-align: right; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; }
+    td.num { text-align: right; }
+    tr.subtotal td { font-weight: bold; background: #f5f7fa; border-top: 1px solid #1a3a5c; }
+    tr.total td { font-weight: bold; font-size: 13pt; background: #eaf0f8; border-top: 2px solid #1a3a5c; }
+    .footer { margin-top: 30px; font-size: 10pt; color: #666; border-top: 1px solid #ccc; padding-top: 8px; }
+    @media print { body { margin: 1.5cm; } }
+  </style>
+</head>
+<body>
+<h1>
+  {% if settings %}{{ settings.council_name }} — {% endif %}Balance Sheet<br>
+  <small>As at {{ fy.end_date.strftime('%d %B %Y') }}</small>
+</h1>
+
+<h2>Fixed Assets</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Asset</th>
+      <th class="num">Cost (£)</th>
+      <th class="num">Accum. Depreciation (£)</th>
+      <th class="num">Net Book Value (£)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in assets %}
+    <tr>
+      <td>{{ a.name }} <small>({{ a.category }})</small></td>
+      <td class="num">{{ '%.2f' | format(a.acquisition_cost) }}</td>
+      <td class="num">{{ '%.2f' | format(a.accumulated_depreciation(fy.end_date)) }}</td>
+      <td class="num">{{ '%.2f' | format(a.net_book_value(fy.end_date)) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="subtotal">
+      <td>Total Fixed Assets</td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="num">{{ '%.2f' | format(total_fixed_assets) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Current Assets</h2>
+<table>
+  <thead><tr><th>Item</th><th class="num">Amount (£)</th></tr></thead>
+  <tbody>
+    <tr><td>Cash and bank balances</td><td class="num">{{ '%.2f' | format(bank_balance) }}</td></tr>
+    {% for a in asset_accruals %}
+    <tr>
+      <td>{{ a.description }} <small>({{ a.type_label }})</small></td>
+      <td class="num">{{ '%.2f' | format(a.amount) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="subtotal"><td>Total Current Assets</td><td class="num">{{ '%.2f' | format(total_current_assets) }}</td></tr>
+  </tbody>
+</table>
+
+{% if liability_accruals %}
+<h2>Current Liabilities</h2>
+<table>
+  <thead><tr><th>Item</th><th class="num">Amount (£)</th></tr></thead>
+  <tbody>
+    {% for a in liability_accruals %}
+    <tr>
+      <td>{{ a.description }} <small>({{ a.type_label }})</small></td>
+      <td class="num">{{ '%.2f' | format(a.amount) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="subtotal"><td>Total Current Liabilities</td><td class="num">{{ '%.2f' | format(total_liabilities) }}</td></tr>
+  </tbody>
+</table>
+{% endif %}
+
+<table style="margin-top:16px;">
+  <tbody>
+    <tr class="total">
+      <td>Net Assets</td>
+      <td class="num">£{{ '%.2f' | format(net_assets) }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Reserves</h2>
+<table>
+  <thead><tr><th>Reserve</th><th class="num">Balance (£)</th></tr></thead>
+  <tbody>
+    {% for r in reserves %}
+    <tr>
+      <td>{{ r.name }}{% if r.is_general %} <small>(general)</small>{% endif %}</td>
+      <td class="num">{{ '%.2f' | format(r.balance) }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total"><td>Total Reserves</td><td class="num">£{{ '%.2f' | format(total_reserves) }}</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  Generated {{ generated.strftime('%d/%m/%Y at %H:%M') }} &bull;
+  Council Finance — Income &amp; Expenditure system &bull;
+  This is an unaudited management account.
+</div>
+</body>
+</html>
